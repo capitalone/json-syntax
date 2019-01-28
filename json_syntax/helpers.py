@@ -49,7 +49,7 @@ def resolve_fwd_ref(typ, context_class):
     '''
     try:
         namespace = vars(import_module(context_class.__module__))
-    except (AttributeError, ImportError):
+    except AttributeError:
         return typ
 
     return _eval_type(typ, namespace, {})

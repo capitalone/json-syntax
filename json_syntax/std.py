@@ -8,9 +8,9 @@ from functools import partial
 from typing import Union
 
 '''
-These are standard rules to handle various types. All rules take a verb, a Python type and a context.
+These are standard rules to handle various types.
 
-A rule returns a conversion function for that verb.
+All rules take a verb, a Python type and a context, which is generally a RuleSet. A rule returns a conversion function for that verb.
 '''
 
 
