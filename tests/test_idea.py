@@ -1,42 +1,69 @@
-import attr
-from typing import Union, Optional, List
+from dataclasses import dataclass
+from datetime import date
+from typing import Optional, List
+import json_syntax as js
 
-@attr.s(auto_attribs=True)
+
+@dataclass
 class CompositeThing:
-    foo: Union[int, str]
+    foo: bool
     bar: List['Other']
     qux: Optional[int]
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class Other:
     x: float
-    y: float
+    y: date
     z: Optional[CompositeThing]
 
 
-'''
-So... we have a structure here.
+def test_encoding_of_composite_thing():
+    "We should get an encoded composite thing."
+    rs = js.std_ruleset()
+    encoder = rs.lookup(typ=CompositeThing, verb=js.P2J)
 
-What I want at the end of it is a classmethod or function that can encode an object as JSON, decode some JSON into the object.
+    instance = CompositeThing(
+        foo=False, bar=[
+            Other(x=3.3, y=date(1944, 4, 4), z=None),
+            Other(x=4.4, y=date(1955, 5, 5), z=None)],
+        qux=77
+    )
+    print(encoder)
+    assert encoder(instance) == {
+        'foo': False,
+        'bar': [
+            {'x': 3.3,
+             'y': '1944-04-04',
+             'z': None},
+            {'x': 4.4,
+             'y': '1955-05-05',
+             'z': None},
+        ], 'qux': 77
+    }
 
-And I might want to be able to swap in arbitrary functions for a given type.
 
-Let's suppose we have a class called Generator that will scan a type and try to determine the correct rules.
+def test_decoding_of_composite_thing():
+    "We should get an encoded composite thing."
+    rs = js.std_ruleset()
+    decoder = rs.lookup(typ=CompositeThing, verb=js.J2P)
 
-I had been messing with the registry, but I was going in circles trying to figure out how to make the registry look up types through the `typing` API.
+    blob = {
+        'foo': False,
+        'bar': [
+            {'x': 3.3,
+             'y': '1944-04-04',
+             'z': None},
+            {'x': 4.4,
+             'y': '1955-05-05',
+             'z': None},
+        ], 'qux': 77
+    }
 
-But I really don't need to. The Generator class can be a list of matchers. One would handle collection types, another would look at attrs, another basic types. And you'd insert overrides where you wanted them, or subclass it to inject your logic. (Could be that types specify their own Generator, too, since a discovery mechanism could just look for `.discovery` on the type.)
-
-And one of those methods could look in a registry for specific type instances to see if an encode / decode mechanism already existed for them, and it could keep this up to date as it's building encoders and decoders.
-
-The call we're going to make is `Generator.generate_encoder(root_type)`. We first call:
-
->>> reg = SimpleRegistry()
->>> gen = Generator()
->>> gen.use(reg)
->>> gen.use(basic_types)
->>> gen.use(attrs_types)
->>> gen.use(collection_types)
->>> gen.notify(add_classmethods)
->>> gen.notify(reg)
+    print(decoder)
+    assert decoder(blob) == CompositeThing(
+        foo=False, bar=[
+            Other(x=3.3, y=date(1944, 4, 4), z=None),
+            Other(x=4.4, y=date(1955, 5, 5), z=None)
+        ], qux=77
+    )

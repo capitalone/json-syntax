@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "json-syntax"
+version = "0.1.0"
+description = "Generates functions to convert Python classes to JSON dumpable objects."
+authors = ["Ben Samuel <bsamuel@unitedincome.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+
+[tool.poetry.dev-dependencies]
+pytest = "^4.1"
+attrs = "^18.2"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

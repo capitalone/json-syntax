@@ -1,141 +1,99 @@
+from .helpers import has_origin, issub_safe, NoneType, JP, J2P, P2J
+from .convert import (convert_none, convert_date_loosely, convert_enum_str, convert_str_enum, convert_optional,
+                      convert_sequence)
+
+from datetime import datetime, date
+from enum import Enum
+from functools import partial
+from typing import Union
+
 '''
-Standard converters.
+These are standard rules to handle various types. All rules take a verb, a Python type and a context.
+
+A rule returns a conversion function for that verb.
 '''
 
-from .types import Convertable, Converter, Behavior, Trip, type_fqn
 
-import attr
-from decimal import Context
-from typing import Sequence, Optional, _eval_type, _ForwardRef
+def atoms(*, verb, typ, ctx):
+    "Rule to handle atoms on both sides."
+    if verb in JP and issub_safe(typ, (str, float, int, NoneType)):
+        if typ is NoneType:
+            return convert_none
+        for base in (str, float, bool, int):
+            if issubclass(typ, base):
+                return base
 
 
-@attr.s(frozen=True, auto_attrib=True)
-class IdentityConverter(Converter):
+def iso_dates(*, verb, typ, ctx, loose_json=True):
+    "Rule to handle iso formatted datetimes and dates."
+    if issub_safe(typ, date):
+        if verb == P2J:
+            if issubclass(typ, datetime):
+                return datetime.isoformat
+            return date.isoformat
+        elif verb == J2P:
+            if issubclass(typ, datetime):
+                return datetime.fromisoformat
+            return convert_date_loosely if loose_json else date.fromisoformat
+
+
+#: Don't accept time data in a ``date`` type.
+iso_dates_strict = partial(iso_dates, loose_json=False)
+
+
+def enums(*, verb, typ, ctx):
+    "Rule to convert between enumerated types and strings."
+    if issub_safe(typ, Enum):
+        if verb == P2J:
+            return convert_enum_str
+        elif verb == J2P:
+            return partial(convert_str_enum, mapping=typ.__members__)
+
+
+def optional(*, verb, typ, ctx):
     '''
-    An IdentityConverter leaves the data untouched when it is known to be represented identically in both
-    JSON and Python.
+    Handle an ``Optional[inner]`` by passing ``None`` through.
     '''
-    specified = True
-    subject: type
+    if verb in JP and has_origin(typ, Union, num_args=2):
+        if NoneType not in typ.__args__:
+            return
+        inner = None
+        for arg in typ.__args__:
+            if arg is not NoneType:
+                inner = arg
+        if inner is None:
+            raise TypeError(f"Could not find inner type for Optional: {typ}")
+        inner = ctx.lookup_inner(verb=verb, typ=inner)
+        return partial(convert_optional, inner=inner)
 
-    def _behaviors(self):
-        return Behavior.roundtrip(trip=Trip.PY_JS, subject=self.subject)
 
-    def convert(self, value, subject, trip):
-        return value
-
-
-@attr.s(frozen=True, auto_attrib=True)
-class NumericConverter(Converter):
+def list_or_tuple(*, verb, typ, ctx):
     '''
-    Numerics are complicated because of multiple representations on the JSON and Python side.
-
-    Motivations:
-
-    * JSON itself only recognizes decimal rationals.
-    * Compliant JSON handlers may thus strip trailing zeroes and decimals points.
-    * stdlib compatible handlers may distinguish between integers and decimal rationals, and create ``int`` or ``float``.
-    * stdlib compatible handlers may recognize infinity and Nan constants.
-    * stdlib compatible handlers will faithfully render Decimals with trailing zeroes and floats with at least ``.0``.
-    * JSON handling may be outside the user's control.
-
-    Thus, for rationals:
-
-    * When reading, we should accept both rationals and integrals.
-    * When writing, we should generate the rational type.
-    * We provide separate constructors to allow use of methods like ``Context.create_decimal``.
-
-    We can use the same logic for other types. Our standard converters simply accept any kind of Number on the JSON side.
+    Handle a ``List[type]`` or ``Tuple[type, ...]``. Note: the ellipsis indicates a homogenous tuple.
     '''
-    specified = True
-    subject: type
-    json_primary_type: type
-    json_secondary_types: Sequence[type] = ()
-    json_constructor: callable = attr.ib()
-    python_constructor: callable = attr.ib()
-    _instance_check: Tuple[type, ...] = attr.ib(init=False, repr=False)
-
-    @json_constructor.default
-    def _jc_default(self):
-        return self.json_primary_type
-
-    @python_constructor.default
-    def _pc_default(self):
-        return self.subject
-
-    @_instance_check.default
-    def _instance_calc(self):
-        return (self.json_primary_type,) + tuple(self.json_secondary_type)
-
-    def _behaviors(self):
-        return Behavior.roundtrip(trip=Trip.PY_JS, subject=self.subject)
-
-    def can_attempt(self, value, subject, trip):
-        if trip == Trip.PY_JS:
-            return isinstance(value, subject)
-        elif trip == Trip.JS_PY:
-            return isinstance(value, self._instance_check)
+    if verb in JP:
+        if has_origin(typ, list, num_args=1):
+            (inner,) = typ.__args__
+        elif has_origin(typ, tuple, num_args=2):
+            (inner, ell) = typ.__args__
+            if ell is not Ellipsis:
+                return
         else:
-            raise InvalidTripArgument()
-
-    def convert(self, value, subject, trip):
-        if trip == Trip.PY_JS:
-            return self.json_constructor(value)
-        elif trip == Trip.JS_PY:
-            return self.python_constructor(value)
-        else:
-            raise InvalidTripArgument()
+            return
+        inner = ctx.lookup_inner(verb=verb, typ=inner)
+        return partial(convert_sequence, inner=inner, con=typ.__origin__)
 
 
-@attr.s(frozen=True)
-class AttrConvertable(Converter):
-    specified = False
-    subject = attr.ib()
-
-    def _behaviors(self):
-        return  Behavior(trip=trip, subject=attribute.type)
-
-
-@attr.s(auto_attribs=True, frozen=True)
-class AttrsDictConverter(Converter):
+def set_or_frozenset(*, verb, typ, ctx, json_accepts_sets=False):
     '''
-    Constructs a converter that delegates to its parameters.
+    Handle a ``Set[type]`` or ``FrozenSet[type]``.
     '''
-    specified = True
-    subject: type = attr.ib()
-
-    @params.default
-    def _calc_params(self):
-        _params = {}
-        for field in attr.fields(self.subject):
-            _params[field.name] = AttrConvertable(field)
-
-
-def get_attrs_hints(cls):
-    '''
-    The typing module provides get_type_hints, but it only inspects annotations.
-    attrs classes that use ``attr.ib(type=...)`` should work.
-    '''
-    globalns = sys.modules[cls.__module__].__dict__
-    hints = {}
-    for attrib in attr.fields(cls):
-        name = attrib.name
-        value = attrib.type
-        hints[name] = normalize(value, globals=globalns)
-
-
-string_identity = IdentityConverter(str)
-none_identity = IdentityConverter(type(None))
-bool_identity = IdentityConverter(bool)
-
-use_floats_for_floats = NumericConverter(float, json_primary_type=float, json_secondary_types=[Number])
-use_decimals_for_decimals = NumericConverter(Decimal, json_primary_type=Decimal, json_secondary_types=[Number])
-use_ints_for_ints = NumericConverter(int, json_primary_type=int, json_secondary_types=[Number])
-
-
-def use_decimals_with_context(context):
-    return NumericConverter(Decimal,
-                            json_primary_type=Decimal,
-                            json_secondary_types=[Number],
-                            json_constructor=context.create_decimal,
-                            python_constructor=context.create_decimal)
+    if verb in JP:
+        if has_origin(typ, (set, frozenset), num_args=1):
+            (inner,) = typ.__args__
+            if verb == J2P or json_accepts_sets:
+                con = typ.__origin__
+            else:
+                con = list
+            inner = ctx.lookup_inner(verb=verb, typ=inner)
+            return partial(convert_sequence, inner=inner, con=con)
