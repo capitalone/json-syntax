@@ -52,7 +52,7 @@ def test_eval_type_imports():
 
 
 class SomeClass:
-    some_type = t.List['AnotherClass']
+    some_type = t.List["AnotherClass"]
 
 
 class AnotherClass:
@@ -71,7 +71,7 @@ def test_resolve_fwd_ref():
 def test_resolve_fwd_ref_bad_context():
     "Test that resolve_fwd_ref returns the original if the module can't be determined."
 
-    subj = t.ForwardRef('AnotherClass')
-    actual = hlp.resolve_fwd_ref(subj, 'dummy')
+    subj = t.ForwardRef("AnotherClass")
+    actual = hlp.resolve_fwd_ref(subj, "dummy")
 
     assert actual is subj
