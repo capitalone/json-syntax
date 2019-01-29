@@ -1,6 +1,7 @@
 class NullCache:
     """
-    A stub cache object to describe the API. This will actually work for types without cycles.
+    A stub cache object to describe the API. This will actually work for types without
+    cycles.
     """
 
     def get(self, *, verb, typ):
@@ -27,7 +28,9 @@ class RuleSet:
             if not accept_missing:
                 raise TypeError(f"Attempted to find {verb} for 'None'")
             if self.fallback is None:
-                raise TypeError(f"Attempted to find {verb} for 'None' but no fallback defined.")
+                raise TypeError(
+                    f"Attempted to find {verb} for 'None' but no fallback defined."
+                )
             return self.fallback(verb)
 
         action = self.cache.get(verb=verb, typ=typ)
@@ -43,6 +46,8 @@ class RuleSet:
                 return action
 
         if self.fallback is None:
-            raise TypeError(f"Can't find {verb} to handle {typ} and no fallback defined")
+            raise TypeError(
+                f"Can't find {verb} to handle {typ} and no fallback defined"
+            )
 
     lookup_inner = lookup

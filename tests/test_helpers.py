@@ -48,7 +48,9 @@ def test_eval_type_imports():
 
     from json_syntax.helpers import _eval_type
 
-    assert _eval_type is not None, "typing._eval_type is not available, investigate an alternative."
+    assert (
+        _eval_type is not None
+    ), "typing._eval_type is not available, investigate an alternative."
 
 
 class SomeClass:

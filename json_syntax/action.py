@@ -6,10 +6,10 @@ def convert_date_loosely(value):
     return datetime.fromisoformat(value).date()
 
 
-def check_value_error(value, *, parser):
+def check_parse_error(value, *, parser, error):
     try:
         parser(value)
-    except (ValueError, TypeError):
+    except error:
         return False
     else:
         return True
@@ -107,7 +107,9 @@ def convert_attrs_to_dict(value, *, post_hook, inner_map):
 
 
 def check_attrs(value, *, inner_map, con):
-    return isinstance(value, con) and all(inner(getattr(value, name)) for name, inner in inner_map)
+    return isinstance(value, con) and all(
+        inner(getattr(value, name)) for name, inner in inner_map
+    )
 
 
 def convert_tuple_as_list(value, *, inner, con):
@@ -116,3 +118,14 @@ def convert_tuple_as_list(value, *, inner, con):
 
 def check_tuple_as_list(value, *, inner, con):
     return isinstance(value, con) and all(chk(val) for val, chk in zip(value, inner))
+
+
+def check_union(value, *, steps):
+    return any(step(value) for step in steps)
+
+
+def convert_union(value, *, steps, typename):
+    for check, convert in steps:
+        if check(value):
+            return convert(value)
+    raise ValueError(f"Expected value of type {typename}")

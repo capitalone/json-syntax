@@ -1,22 +1,23 @@
 from .helpers import has_origin, issub_safe, NoneType, JP, J2P, P2J, IJ, IP, II, JPI
-from .convert import (
-    convert_none,
-    convert_date_loosely,
-    convert_enum_str,
-    convert_str_enum,
-    convert_optional,
-    check_optional,
-    convert_collection,
+from .action import (
     check_collection,
-    convert_mapping,
-    check_mapping,
     check_float,
     check_isinst,
-    check_value_error,
+    check_mapping,
+    check_optional,
+    check_parse_error,
+    convert_collection,
+    convert_date_loosely,
+    convert_enum_str,
+    convert_mapping,
+    convert_none,
+    convert_optional,
+    convert_str_enum,
 )
 
 from collections import OrderedDict
 from datetime import datetime, date
+from decimal import Decimal
 from enum import Enum
 from functools import partial
 from operator import contains
@@ -25,8 +26,8 @@ from typing import Union
 """
 These are standard rules to handle various types.
 
-All rules take a verb, a Python type and a context, which is generally a RuleSet. A rule returns a conversion function
-for that verb.
+All rules take a verb, a Python type and a context, which is generally a RuleSet. A rule
+returns a conversion function for that verb.
 """
 
 
@@ -51,6 +52,28 @@ def atoms(*, verb, typ, ctx):
                     return partial(check_isinst, typ=base)
 
 
+def decimals(*, verb, typ, ctx):
+    "Rule to handle decimals natively."
+    if issub_safe(typ, Decimal):
+        if verb in JP:
+            return Decimal
+        elif verb in II:
+            return partial(check_isinst, typ=Decimal)
+
+
+def decimals_as_str(*, verb, typ, ctx):
+    "Rule to handle decimals as strings."
+    if issub_safe(typ, Decimal):
+        if verb == J2P:
+            return Decimal
+        elif verb == P2J:
+            return str
+        elif verb == IP:
+            return partial(check_isinst, typ=Decimal)
+        elif verb == IJ:
+            return partial(check_parse_error, parser=Decimal, error=ArithmeticError)
+
+
 def iso_dates(*, verb, typ, ctx, loose_json=True):
     "Rule to handle iso formatted datetimes and dates."
     if issub_safe(typ, date):
@@ -63,10 +86,14 @@ def iso_dates(*, verb, typ, ctx, loose_json=True):
                 return datetime.fromisoformat
             return convert_date_loosely if loose_json else date.fromisoformat
         elif verb == IP:
-            return partial(check_isinst, typ=datetime if isinstance(typ, datetime) else date)
+            return partial(
+                check_isinst, typ=datetime if isinstance(typ, datetime) else date
+            )
         elif verb == IJ:
             base = datetime if issubclass(typ, datetime) or loose_json else date
-            return partial(check_value_error, parser=base.fromisoformat)
+            return partial(
+                check_parse_error, parser=base.fromisoformat, error=ValueError
+            )
 
 
 #: Don't accept time data in a ``date`` type.
@@ -83,6 +110,16 @@ def enums(*, verb, typ, ctx):
         elif verb == IP:
             return partial(check_isinst, typ=typ)
         elif verb == IJ:
+            return partial(contains, frozenset(typ.__members__.keys()))
+
+
+def faux_enums(*, verb, typ, ctx):
+    "Rule to fake an Enum by actually using strings."
+    if issub_safe(typ, Enum):
+        if verb in JP:
+            mapping = {name: name for name in typ.__members__}
+            return partial(convert_str_enum, mapping=mapping)
+        elif verb in II:
             return partial(contains, frozenset(typ.__members__.keys()))
 
 
@@ -114,7 +151,8 @@ def lists(*, verb, typ, ctx):
     """
     Handle a ``List[type]`` or ``Tuple[type, ...]``.
 
-    Trivia: the ellipsis indicates a homogenous tuple; ``Tuple[A, B, C]`` is a more traditional product type.
+    Trivia: the ellipsis indicates a homogenous tuple; ``Tuple[A, B, C]`` is a product
+    type that contains exactly those elements.
     """
     if verb not in JPI:
         return

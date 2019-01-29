@@ -1,3 +1,5 @@
+import pytest
+
 from json_syntax import cache
 
 
@@ -19,9 +21,7 @@ def test_forward_action():
 
     assert subj(3, 7) == 21
 
-    assert subj.__name__ == "func2"
-    assert subj.__doc__ == "Doc string."
-    assert getattr(subj, "bogus", "missing") == "missing"
+    assert repr(subj).startswith("<fwd <function")
 
 
 def test_simple_cache_get():
@@ -32,13 +32,14 @@ def test_simple_cache_get():
     assert subj.get(verb="verb", typ=int) is None
 
 
+@pytest.mark.filterwarnings("error")
 def test_simple_cache_flight():
     "Test that the SimpleCache inflight -> complete mechanism produces a valid forward action."
 
     subj = cache.SimpleCache()
 
     # Notify the cache that we're working on the result.
-    subj.inflight(verb="verb", typ=int)
+    subj.in_flight(verb="verb", typ=int)
 
     # Another rule needs the result before it's ready.
     actual = subj.get(verb="verb", typ=int)
@@ -53,8 +54,27 @@ def test_simple_cache_flight():
     assert actual(5) == 50
 
     # The cache entry is replaced with the action itself.
-    assert subj.get(verb="verb", type=int) is action
+    assert subj.get(verb="verb", typ=int) is action
+
+
+class NoHashMeta(type):
+    __hash__ = None
+
+
+class NoHash(metaclass=NoHashMeta):
+    pass
 
 
 def test_simple_cache_unhashable():
-    pass
+    "Test that SimpleCache warns on unhashable type instances."
+
+    subj = cache.SimpleCache()
+
+    with pytest.warns(cache.UnhashableType):
+        subj.get(verb="verb", typ=NoHash)
+
+    with pytest.warns(cache.UnhashableType):
+        subj.in_flight(verb="verb", typ=NoHash)
+
+    with pytest.warns(cache.UnhashableType):
+        subj.complete(verb="verb", typ=NoHash, action=lambda val: val + 1)

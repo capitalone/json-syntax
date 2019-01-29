@@ -22,11 +22,11 @@ def identity(value):
 
 def has_origin(typ, origin, *, num_args=None):
     """
-    Determines if a concrete class (a generic class with arguments) matches an origin and has a specified number of
-    arguments.
+    Determines if a concrete class (a generic class with arguments) matches an origin
+    and has a specified number of arguments.
 
-    The typing classes use dunder properties such that ``__origin__`` is the generic class and ``__args__`` are the
-    type arguments.
+    The typing classes use dunder properties such that ``__origin__`` is the generic
+    class and ``__args__`` are the type arguments.
     """
     try:
         t_origin = typ.__origin__
@@ -35,7 +35,9 @@ def has_origin(typ, origin, *, num_args=None):
     else:
         if not isinstance(origin, tuple):
             origin = (origin,)
-        return t_origin in origin and (num_args is None or len(typ.__args__) == num_args)
+        return t_origin in origin and (
+            num_args is None or len(typ.__args__) == num_args
+        )
 
 
 def issub_safe(sub, sup):
@@ -47,7 +49,8 @@ def issub_safe(sub, sup):
 
 def resolve_fwd_ref(typ, context_class):
     """
-    Tries to resolve a forward reference given a containing class. This does nothing for regular types.
+    Tries to resolve a forward reference given a containing class. This does nothing for
+    regular types.
     """
     try:
         namespace = vars(import_module(context_class.__module__))
