@@ -18,20 +18,15 @@ NullCache.instance = NullCache()
 
 
 class RuleSet:
-    def __init__(self, *rules, cache=NullCache.instance, fallback=None):
+    def __init__(self, *rules, cache=NullCache.instance):
         self.rules = rules
         self.cache = cache
-        self.fallback = fallback
 
     def lookup(self, *, verb, typ, accept_missing=False):
         if typ is None:
             if not accept_missing:
                 raise TypeError(f"Attempted to find {verb} for 'None'")
-            if self.fallback is None:
-                raise TypeError(
-                    f"Attempted to find {verb} for 'None' but no fallback defined."
-                )
-            return self.fallback(verb)
+            return self.fallback(verb=verb, typ=typ)
 
         action = self.cache.get(verb=verb, typ=typ)
         if action is not None:
@@ -45,9 +40,9 @@ class RuleSet:
                 self.cache.complete(verb=verb, typ=typ, action=action)
                 return action
 
-        if self.fallback is None:
-            raise TypeError(
-                f"Can't find {verb} to handle {typ} and no fallback defined"
-            )
+        return self.fallback(verb=verb, typ=typ)
 
-    lookup_inner = lookup
+    def fallback(self, *, verb, typ):
+        raise TypeError(
+            f"Attempted to find {verb} for {typ!r} but no fallback defined."
+        )

@@ -140,7 +140,7 @@ def optional(*, verb, typ, ctx):
             raise TypeError(f"Could not find inner type for Optional: {typ}")
     else:
         return
-    inner = ctx.lookup_inner(verb=verb, typ=inner)
+    inner = ctx.lookup(verb=verb, typ=inner)
     if verb in JP:
         return partial(convert_optional, inner=inner)
     elif verb in II:
@@ -164,7 +164,7 @@ def lists(*, verb, typ, ctx):
             return
     else:
         return
-    inner = ctx.lookup_inner(verb=verb, typ=inner)
+    inner = ctx.lookup(verb=verb, typ=inner)
     con = list if verb in (P2J, IJ) else typ.__origin__
     if verb in JP:
         return partial(convert_collection, inner=inner, con=con)
@@ -182,7 +182,7 @@ def sets(*, verb, typ, ctx):
         return
     (inner,) = typ.__args__
     con = list if verb in (P2J, IJ) else typ.__origin__
-    inner = ctx.lookup_inner(verb=verb, typ=inner)
+    inner = ctx.lookup(verb=verb, typ=inner)
     if verb in JP:
         return partial(convert_collection, inner=inner, con=con)
     elif verb in II:
@@ -221,7 +221,7 @@ def dicts(*, verb, typ, ctx):
     key_type = _stringly(verb=verb, typ=key_type, ctx=ctx)
     if key_type is None:
         return
-    val_type = ctx.lookup_inner(verb=verb, typ=val_type)
+    val_type = ctx.lookup(verb=verb, typ=val_type)
     if verb in JP:
         return partial(convert_mapping, key=key_type, val=val_type, con=typ.__origin__)
     elif verb in II:

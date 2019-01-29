@@ -61,7 +61,7 @@ def resolve_fwd_ref(typ, context_class):
 
 
 if _eval_type is None:
-    # If typing's internal API changes, we should have tests that break quite quickly.
+    # If typing's internal API changes, we have tests that break.
     def resolve_fwd_ref(typ, context_class):  # noqa
         return typ
 

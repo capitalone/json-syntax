@@ -32,13 +32,13 @@ def unions(*, verb, typ, ctx):
                 return
             steps = []
             for arg in typ.__args__:
-                check = ctx.lookup_inner(verb=check_verb, typ=arg)
-                convert = ctx.lookup_inner(verb=verb, typ=arg)
+                check = ctx.lookup(verb=check_verb, typ=arg)
+                convert = ctx.lookup(verb=verb, typ=arg)
                 steps.append((check, convert))
             return partial(convert_union, steps=steps, typename=repr(typ))
         elif verb in II:
             steps = []
             for arg in typ.__args__:
-                check = ctx.lookup_inner(verb=verb, typ=arg)
+                check = ctx.lookup(verb=verb, typ=arg)
                 steps.append(check)
             return partial(check_union, steps=steps)

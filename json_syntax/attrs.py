@@ -44,7 +44,7 @@ def attrs_classes(*, verb, typ, ctx, pre_hook="before_json", post_hook="after_js
         if field.init:
             tup = (
                 field.name,
-                ctx.lookup_inner(
+                ctx.lookup(
                     verb=verb, typ=resolve_fwd_ref(field.type, typ), accept_missing=True
                 ),
             )
@@ -98,9 +98,7 @@ def named_tuples(*, verb, typ, ctx):
     for name, inner in fields:
         tup = (
             name,
-            ctx.lookup_inner(
-                verb=verb, typ=resolve_fwd_ref(inner, typ), accept_missing=True
-            ),
+            ctx.lookup(verb=verb, typ=resolve_fwd_ref(inner, typ), accept_missing=True),
         )
         if verb == P2J:
             tup += (defaults.get(name, SENTINEL),)
@@ -136,7 +134,7 @@ def tuples(*, verb, typ, ctx):
     if Ellipsis in args:
         # This is a homogeneous tuple, use the lists rule.
         return
-    inner = [ctx.lookup_inner(verb=verb, typ=arg) for arg in args]
+    inner = [ctx.lookup(verb=verb, typ=arg) for arg in args]
     if verb == J2P:
         return partial(convert_tuple_as_list, inner=inner, con=tuple)
     elif verb == P2J:
