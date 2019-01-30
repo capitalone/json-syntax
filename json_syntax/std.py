@@ -87,12 +87,12 @@ def iso_dates(*, verb, typ, ctx, loose_json=True):
             return convert_date_loosely if loose_json else date.fromisoformat
         elif verb == IP:
             return partial(
-                check_isinst, typ=datetime if isinstance(typ, datetime) else date
+                check_isinst, typ=datetime if issubclass(typ, datetime) else date
             )
         elif verb == IJ:
             base = datetime if issubclass(typ, datetime) or loose_json else date
             return partial(
-                check_parse_error, parser=base.fromisoformat, error=ValueError
+                check_parse_error, parser=base.fromisoformat, error=(TypeError, ValueError)
             )
 
 
