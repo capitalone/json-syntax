@@ -6,6 +6,7 @@ from .action import (
     check_mapping,
     check_optional,
     check_parse_error,
+    check_str_enum,
     convert_collection,
     convert_date_loosely,
     convert_enum_str,
@@ -20,7 +21,6 @@ from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
 from functools import partial
-from operator import contains
 from typing import Union
 
 """
@@ -112,7 +112,7 @@ def enums(*, verb, typ, ctx):
         elif verb == IP:
             return partial(check_isinst, typ=typ)
         elif verb == IJ:
-            return partial(contains, frozenset(typ.__members__.keys()))
+            return partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
 
 
 def faux_enums(*, verb, typ, ctx):
@@ -122,7 +122,7 @@ def faux_enums(*, verb, typ, ctx):
             mapping = {name: name for name in typ.__members__}
             return partial(convert_str_enum, mapping=mapping)
         elif verb in II:
-            return partial(contains, frozenset(typ.__members__.keys()))
+            return partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
 
 
 def optional(*, verb, typ, ctx):

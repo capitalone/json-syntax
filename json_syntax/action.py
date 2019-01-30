@@ -36,6 +36,10 @@ def convert_none(value):
     return None
 
 
+def check_str_enum(value, *, mapping):
+    return isinstance(value, str) and value in mapping
+
+
 def convert_str_enum(value, *, mapping):
     return mapping[value]
 
