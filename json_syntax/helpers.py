@@ -92,4 +92,4 @@ def is_attrs_field_required(field):
     except AttributeError:
         return True
     else:
-        return factory not in _missing_values
+        return factory in _missing_values

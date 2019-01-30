@@ -116,9 +116,13 @@ def test_atoms_null():
 
     decoder = std.atoms(verb=J2P, typ=NoneType, ctx=Fail())
     assert decoder(None) is None
+    with pytest.raises(ValueError):
+        decoder(5)
 
     encoder = std.atoms(verb=P2J, typ=NoneType, ctx=Fail())
     assert encoder(None) is None
+    with pytest.raises(ValueError):
+        encoder(5)
 
     inspect = std.atoms(verb=IP, typ=NoneType, ctx=Fail())
     assert inspect(None)
@@ -140,6 +144,7 @@ def test_atoms_picklable():
     assert None not in actions
     dumps(actions)
 
+
 def test_decimals_disregard():
     "Test the decimals rule will disregard unknown types and verbs."
 
@@ -154,24 +159,24 @@ def test_decimals():
     "Test the decimals rule will generate encoders and decoders for decimals."
 
     decoder = std.decimals(verb=J2P, typ=Decimal, ctx=Fail())
-    assert decoder(Decimal('77.7')) == Decimal('77.7')
+    assert decoder(Decimal("77.7")) == Decimal("77.7")
 
     encoder = std.decimals(verb=P2J, typ=Decimal, ctx=Fail())
-    assert encoder(Decimal('77.7')) == Decimal('77.7')
+    assert encoder(Decimal("77.7")) == Decimal("77.7")
 
     inspect = std.decimals(verb=IP, typ=Decimal, ctx=Fail())
     assert not inspect("string")
     assert not inspect(44)
     assert not inspect(77.7)
-    assert not inspect('77.7')
-    assert inspect(Decimal('77.7'))
+    assert not inspect("77.7")
+    assert inspect(Decimal("77.7"))
 
     inspect = std.decimals(verb=IJ, typ=Decimal, ctx=Fail())
     assert not inspect("string")
     assert not inspect(44)
     assert not inspect(77.7)
-    assert not inspect('77.7')
-    assert inspect(Decimal('77.7'))
+    assert not inspect("77.7")
+    assert inspect(Decimal("77.7"))
 
 
 def test_decimals_as_str_disregard():
@@ -188,25 +193,25 @@ def test_decimals_as_str():
     "Test the decimals_as_str rule will generate encoders and decoders for decimals."
 
     decoder = std.decimals_as_str(verb=J2P, typ=Decimal, ctx=Fail())
-    assert decoder(Decimal('77.7')) == Decimal('77.7')
-    assert decoder('77.7') == Decimal('77.7')
+    assert decoder(Decimal("77.7")) == Decimal("77.7")
+    assert decoder("77.7") == Decimal("77.7")
 
     encoder = std.decimals_as_str(verb=P2J, typ=Decimal, ctx=Fail())
-    assert encoder(Decimal('77.7')) == '77.7'
+    assert encoder(Decimal("77.7")) == "77.7"
 
     inspect = std.decimals_as_str(verb=IP, typ=Decimal, ctx=Fail())
     assert not inspect("string")
     assert not inspect(44)
     assert not inspect(77.7)
-    assert not inspect('77.7')
-    assert inspect(Decimal('77.7'))
+    assert not inspect("77.7")
+    assert inspect(Decimal("77.7"))
 
     inspect = std.decimals_as_str(verb=IJ, typ=Decimal, ctx=Fail())
     assert not inspect("string")
     assert inspect(44)
     assert inspect(77.7)
-    assert inspect('77.7')
-    assert inspect(Decimal('77.7'))
+    assert inspect("77.7")
+    assert inspect(Decimal("77.7"))
 
 
 def test_iso_dates_disregard():
@@ -637,7 +642,9 @@ def test_dicts_disregards():
     assert std.dicts(verb="unknown", typ=Dict[date, float], ctx=Fail()) is None
     if OrderedDict is not None:
         assert std.dicts(verb="unknown", typ=OrderedDict[str, int], ctx=Fail()) is None
-        assert std.dicts(verb="unknown", typ=OrderedDict[date, float], ctx=Fail()) is None
+        assert (
+            std.dicts(verb="unknown", typ=OrderedDict[date, float], ctx=Fail()) is None
+        )
     assert std.dicts(verb=P2J, typ=bool, ctx=Fail()) is None
     assert std.dicts(verb=J2P, typ=Dict[float, str], ctx=Fail()) is None
     assert std.dicts(verb=IP, typ=Dict[float, str], ctx=Fail()) is None
@@ -650,21 +657,23 @@ def test_dicts_string_key():
     ctx = Mock(lookup=Mock(side_effect=lambda verb, typ: typ))
 
     encoder = std.dicts(verb=P2J, typ=Dict[str, int], ctx=ctx)
-    assert encoder({22: '11', 44: '33'}) == {'22': 11, '44': 33}
+    assert encoder({22: "11", 44: "33"}) == {"22": 11, "44": 33}
 
     decoder = std.dicts(verb=J2P, typ=Dict[str, int], ctx=ctx)
-    assert decoder({22: '11', 44: '33'}) == {'22': 11, '44': 33}
+    assert decoder({22: "11", 44: "33"}) == {"22": 11, "44": 33}
 
-    ctx = Mock(lookup=Mock(side_effect=lambda verb, typ: lambda val: isinstance(val, typ)))
+    ctx = Mock(
+        lookup=Mock(side_effect=lambda verb, typ: lambda val: isinstance(val, typ))
+    )
 
     inspect = std.dicts(verb=IP, typ=Dict[str, int], ctx=ctx)
-    assert not inspect({'foo': 1, 'bar': 'no'})
-    assert inspect({'foo': 1, 'bar': 2})
+    assert not inspect({"foo": 1, "bar": "no"})
+    assert inspect({"foo": 1, "bar": 2})
     assert inspect({})
 
     inspect = std.dicts(verb=IJ, typ=Dict[str, int], ctx=ctx)
-    assert not inspect({'foo': 1, 'bar': 'no'})
-    assert inspect({'foo': 1, 'bar': 2})
+    assert not inspect({"foo": 1, "bar": "no"})
+    assert inspect({"foo": 1, "bar": 2})
     assert inspect({})
 
 
@@ -679,19 +688,21 @@ def test_dicts_enum_key():
     ctx = Mock(lookup=Mock(side_effect=lambda verb, typ: typ))
 
     encoder = std.dicts(verb=P2J, typ=Dict[AB, int], ctx=ctx)
-    assert encoder({AB.A: '11', AB.B: '33'}) == {'A': 11, 'B': 33}
+    assert encoder({AB.A: "11", AB.B: "33"}) == {"A": 11, "B": 33}
 
     decoder = std.dicts(verb=J2P, typ=Dict[AB, int], ctx=ctx)
-    assert decoder({'A': '11', 'B': '33'}) == {AB.A: 11, AB.B: 33}
+    assert decoder({"A": "11", "B": "33"}) == {AB.A: 11, AB.B: 33}
 
-    ctx = Mock(lookup=Mock(side_effect=lambda verb, typ: lambda val: isinstance(val, typ)))
+    ctx = Mock(
+        lookup=Mock(side_effect=lambda verb, typ: lambda val: isinstance(val, typ))
+    )
 
     inspect = std.dicts(verb=IP, typ=Dict[AB, int], ctx=ctx)
-    assert not inspect({AB.A: 1, AB.B: 'no'})
+    assert not inspect({AB.A: 1, AB.B: "no"})
     assert inspect({AB.A: 1, AB.B: 2})
-    assert not inspect({AB.A: 1, 'B': 2})
+    assert not inspect({AB.A: 1, "B": 2})
 
     inspect = std.dicts(verb=IJ, typ=Dict[AB, int], ctx=ctx)
-    assert not inspect({'A': 1, 'B': 'no'})
-    assert inspect({'A': 1, 'B': 2})
-    assert not inspect({'A': 1, 'C': 2})
+    assert not inspect({"A": 1, "B": "no"})
+    assert inspect({"A": 1, "B": 2})
+    assert not inspect({"A": 1, "C": 2})

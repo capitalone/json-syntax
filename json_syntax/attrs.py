@@ -12,8 +12,8 @@ from .helpers import (
     resolve_fwd_ref,
 )
 from .action import (
-    check_attrs,
     check_dict,
+    check_isinst,
     check_tuple_as_list,
     convert_attrs_to_dict,
     convert_dict_to_attrs,
@@ -23,7 +23,15 @@ from .action import (
 from functools import partial
 
 
-def attrs_classes(*, verb, typ, ctx, pre_hook="before_json", post_hook="after_json"):
+def attrs_classes(
+    *,
+    verb,
+    typ,
+    ctx,
+    pre_hook="__json_pre_init__",
+    post_hook="__json_post_encode__",
+    check="__json_check__",
+):
     """
     Handle an ``@attr.s`` or ``@dataclass`` decorated class.
     """
@@ -38,6 +46,9 @@ def attrs_classes(*, verb, typ, ctx, pre_hook="before_json", post_hook="after_js
             return
         else:
             fields = fields.values()
+
+    if verb == IP:
+        return partial(check_isinst, typ=typ)
 
     inner_map = []
     for field in fields:
@@ -63,16 +74,12 @@ def attrs_classes(*, verb, typ, ctx, pre_hook="before_json", post_hook="after_js
             con=typ,
         )
     elif verb == P2J:
-        post_hook_method = getattr(typ, post_hook, identity)
+        post_hook = post_hook if hasattr(typ, post_hook) else None
         return partial(
-            convert_attrs_to_dict,
-            post_hook=post_hook_method,
-            inner_map=tuple(inner_map),
+            convert_attrs_to_dict, post_hook=post_hook, inner_map=tuple(inner_map)
         )
-    elif verb == IP:
-        return partial(check_attrs, inner_map=inner_map, con=typ)
     elif verb == IJ:
-        return partial(check_dict, inner_map=inner_map)
+        return getattr(typ, check, None) or partial(check_dict, inner_map=inner_map)
 
 
 def named_tuples(*, verb, typ, ctx):
@@ -93,7 +100,12 @@ def named_tuples(*, verb, typ, ctx):
         fields = [(name, None) for name in fields]
     else:
         fields = fields.items()
-    defaults = getattr(typ, "_fields_defaults", {})
+    if verb == IP:
+        return partial(check_isinst, typ=typ)
+
+    defaults = {}
+    defaults.update(getattr(typ, "_fields_defaults", ()))
+    defaults.update(getattr(typ, "_field_defaults", ()))
     inner_map = []
     for name, inner in fields:
         tup = (
@@ -115,12 +127,10 @@ def named_tuples(*, verb, typ, ctx):
         )
     elif verb == P2J:
         return partial(
-            convert_attrs_to_dict, post_hook=identity, inner_map=tuple(inner_map)
+            convert_attrs_to_dict, post_hook=None, inner_map=tuple(inner_map)
         )
-    elif verb == IP:
-        return partial(check_attrs, inner_map=inner_map, con=typ)
     elif verb == IJ:
-        return partial(check_dict, inner_map=inner_map)
+        return partial(check_dict, inner_map=tuple(inner_map))
 
 
 def tuples(*, verb, typ, ctx):

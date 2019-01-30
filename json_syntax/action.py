@@ -32,7 +32,7 @@ convert_enum_str = attrgetter("name")
 
 def convert_none(value):
     if value is not None:
-        raise TypeError("Expected None")
+        raise ValueError("Expected None")
     return None
 
 
@@ -79,8 +79,7 @@ def convert_dict_to_attrs(value, *, pre_hook, inner_map, con):
     return con(**args)
 
 
-def check_dict(value, *, pre_check, inner_map):
-    value = pre_check(value)
+def check_dict(value, *, inner_map):
     if not isinstance(value, dict):
         return False
     for name, inner, required in inner_map:
@@ -102,14 +101,9 @@ def convert_attrs_to_dict(value, *, post_hook, inner_map):
         if field == default:
             continue
         out[name] = inner(field)
-    out = post_hook(out)
+    if post_hook is not None:
+        out = getattr(value, post_hook)(out)
     return out
-
-
-def check_attrs(value, *, inner_map, con):
-    return isinstance(value, con) and all(
-        inner(getattr(value, name)) for name, inner in inner_map
-    )
 
 
 def convert_tuple_as_list(value, *, inner, con):
@@ -117,7 +111,11 @@ def convert_tuple_as_list(value, *, inner, con):
 
 
 def check_tuple_as_list(value, *, inner, con):
-    return isinstance(value, con) and all(chk(val) for val, chk in zip(value, inner))
+    return (
+        isinstance(value, con)
+        and len(value) == len(inner)
+        and all(chk(val) for val, chk in zip(value, inner))
+    )
 
 
 def check_union(value, *, steps):
