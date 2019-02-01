@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 from operator import attrgetter
 
 
@@ -19,11 +20,24 @@ def check_isinst(value, *, typ):
     return isinstance(value, typ)
 
 
+def convert_float(value):
+    value = float(value)
+    if math.isfinite(value):
+        return value
+    elif math.isnan(value):
+        return "NaN"
+    elif value < 0.0:
+        return "-Infinity"
+    else:
+        return "Infinity"
+
+
 def check_float(value):
     return (
         isinstance(value, (int, float))
         or isinstance(value, str)
-        and value.lower() in ("nan", "inf", "-inf", "-infinity", "+inf", "+infinity")
+        and value.lower()
+        in ("nan", "inf", "infinity" "-inf", "-infinity", "+inf", "+infinity")
     )
 
 
@@ -83,7 +97,8 @@ def convert_dict_to_attrs(value, *, pre_hook, inner_map, con):
     return con(**args)
 
 
-def check_dict(value, *, inner_map):
+def check_dict(value, *, inner_map, pre_hook):
+    value = pre_hook(value)
     if not isinstance(value, dict):
         return False
     for name, inner, required in inner_map:

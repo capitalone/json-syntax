@@ -75,7 +75,7 @@ def test_attrs_encoding(FlatCls):
 
 class Hooks:
     @classmethod
-    def __json_pre_init__(cls, value):
+    def __json_pre_decode__(cls, value):
         if isinstance(value, list):
             value = {"a": value[0], "b": value[1]}
         return value

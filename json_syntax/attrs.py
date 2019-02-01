@@ -11,7 +11,7 @@ from .helpers import (
     issub_safe,
     resolve_fwd_ref,
 )
-from .action import (
+from .action_v1 import (
     check_dict,
     check_isinst,
     check_tuple_as_list,
@@ -28,7 +28,7 @@ def attrs_classes(
     verb,
     typ,
     ctx,
-    pre_hook="__json_pre_init__",
+    pre_hook="__json_pre_decode__",
     post_hook="__json_post_encode__",
     check="__json_check__",
 ):
@@ -79,7 +79,11 @@ def attrs_classes(
             convert_attrs_to_dict, post_hook=post_hook, inner_map=tuple(inner_map)
         )
     elif verb == IJ:
-        return getattr(typ, check, None) or partial(check_dict, inner_map=inner_map)
+        check = getattr(typ, check, None)
+        if check:
+            return check
+        pre_hook_method = getattr(typ, pre_hook, identity)
+        return partial(check_dict, inner_map=inner_map, pre_hook=pre_hook_method)
 
 
 def named_tuples(*, verb, typ, ctx):

@@ -1,5 +1,5 @@
 from .helpers import has_origin, JP, J2P, P2J, IJ, IP, II
-from .action import convert_union, check_union
+from .action_v1 import convert_union, check_union
 
 from functools import partial
 from typing import Union

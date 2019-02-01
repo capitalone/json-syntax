@@ -7,8 +7,8 @@ from enum import Enum
 from itertools import product
 from typing import Union, List, Tuple, Set, FrozenSet, Dict
 
-from json_syntax import std_ruleset, iso_dates_strict
-from json_syntax.helpers import P2J, J2P, IP, IJ, NoneType, issub_safe
+from json_syntax import std_ruleset
+from json_syntax.helpers import P2J, J2P, IP, IJ, NoneType
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -27,18 +27,18 @@ cases = [
     (bool, True, True),
     (int, 5, 5),
     (float, 3.3, 3.3),
-    (Decimal, Decimal('5.5'), Decimal('5.5')),
+    (Decimal, Decimal("5.5"), Decimal("5.5")),
     (str, "str", "str"),
     (date, date(2010, 10, 10), "2010-10-10"),
     (datetime, datetime(2011, 11, 11, 11, 11, 11), "2011-11-11T11:11:11"),
-    (Point, Point(x=4.5, y=6.6), {'x': 4.5, 'y': 6.6}),
-    (Dir, Dir.UP, 'UP'),
-    (List[Point], [Point(x=4.5, y=6.6)], [{'x': 4.5, 'y': 6.6}]),
-    (Tuple[Point, ...], (Point(x=4.5, y=6.6),), [{'x': 4.5, 'y': 6.6}]),
-    (Set[Point], {Point(x=4.5, y=6.6)}, [{'x': 4.5, 'y': 6.6}]),
-    (FrozenSet[Point], frozenset([Point(x=4.5, y=6.6)]), [{'x': 4.5, 'y': 6.6}]),
-    (Dict[Dir, Decimal], {Dir.UP: Decimal('7.7')}, {'UP': Decimal('7.7')}),
-    (Dict[str, float], {'a': 2.3, 'b': 3.4}, {'a': 2.3, 'b': 3.4}),
+    (Point, Point(x=4.5, y=6.6), {"x": 4.5, "y": 6.6}),
+    (Dir, Dir.UP, "UP"),
+    (List[Point], [Point(x=4.5, y=6.6)], [{"x": 4.5, "y": 6.6}]),
+    (Tuple[Point, ...], (Point(x=4.5, y=6.6),), [{"x": 4.5, "y": 6.6}]),
+    (Set[Point], {Point(x=4.5, y=6.6)}, [{"x": 4.5, "y": 6.6}]),
+    (FrozenSet[Point], frozenset([Point(x=4.5, y=6.6)]), [{"x": 4.5, "y": 6.6}]),
+    (Dict[Dir, Decimal], {Dir.UP: Decimal("7.7")}, {"UP": Decimal("7.7")}),
+    (Dict[str, float], {"a": 2.3, "b": 3.4}, {"a": 2.3, "b": 3.4}),
 ]
 
 
@@ -74,7 +74,11 @@ def cvt_map():
         left_type, left_python, left_json = left
         right_type, right_python, right_json = right
 
-        if (left_json == right_json or left_python == right_python or ambiguous(left_type, right_type)):
+        if (
+            left_json == right_json
+            or left_python == right_python
+            or ambiguous(left_type, right_type)
+        ):
             continue
 
         typ = Union[left_type, right_type]
@@ -88,7 +92,7 @@ def cvt_map():
 def test_convert_unions(verb, typ, subj, expect):
     "Test that the unions rule is able to convert possible types."
 
-    action = std_ruleset(dates=iso_dates_strict).lookup(verb=verb, typ=typ)
+    action = std_ruleset().lookup(verb=verb, typ=typ)
 
     assert action(subj) == expect
 
@@ -100,7 +104,11 @@ def check_map():
         left_type, left_python, left_json = left
         right_type, right_python, right_json = right
 
-        if left_json == right_json or left_python == right_python or ambiguous(left_type, right_type):
+        if (
+            left_json == right_json
+            or left_python == right_python
+            or ambiguous(left_type, right_type)
+        ):
             continue
 
         typ = Union[left_type, right_type]
@@ -114,6 +122,6 @@ def check_map():
 def test_check_unions(verb, typ, subj):
     "Test that the unions rule is able to verify possible types."
 
-    action = std_ruleset(dates=iso_dates_strict).lookup(verb=verb, typ=typ)
+    action = std_ruleset().lookup(verb=verb, typ=typ)
 
     assert action(subj)

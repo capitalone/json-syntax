@@ -1,5 +1,5 @@
 from .helpers import has_origin, issub_safe, NoneType, JP, J2P, P2J, IJ, IP, II, JPI
-from .action import (
+from .action_v1 import (
     check_collection,
     check_float,
     check_isinst,
@@ -10,6 +10,7 @@ from .action import (
     convert_collection,
     convert_date_loosely,
     convert_enum_str,
+    convert_float,
     convert_mapping,
     convert_none,
     convert_optional,
@@ -33,27 +34,73 @@ returns a conversion function for that verb.
 
 def atoms(*, verb, typ, ctx):
     "Rule to handle atoms on both sides."
-    if issub_safe(typ, (str, float, int, NoneType)):
+    if issub_safe(typ, (str, int, NoneType)):
         if verb in JP:
             if typ is NoneType:
                 return convert_none
-            for base in (str, float, bool, int):
+            for base in (str, bool, int):
                 if issubclass(typ, base):
                     return base
         elif verb == IP:
-            for base in (NoneType, str, float, bool, int):
+            for base in (NoneType, str, bool, int):
                 if issubclass(typ, base):
                     return partial(check_isinst, typ=base)
         elif verb == IJ:
-            if issubclass(typ, float):
-                return check_float
             for base in (NoneType, str, bool, int):
                 if issubclass(typ, base):
                     return partial(check_isinst, typ=base)
 
 
+def floats(*, verb, typ, ctx):
+    """
+    Rule to handle floats passing NaNs through unaltered.
+
+    JSON technically recognizes integers and floats. Many JSON generators will represent floats with integral value as integers.
+    Thus, this rule will convert both integers and floats in JSON to floats in Python.
+
+    Python's standard JSON libraries treat `nan` and `inf` as special constants, but this is not standard JSON.
+
+    This rule simply treats them as regular float values. If you want to catch them, you can set ``allow_nan=False``
+    in ``json.dump()``.
+    """
+    if issub_safe(typ, float):
+        if verb in JP:
+            return float
+        elif verb == IP:
+            return partial(check_isinst, typ=float)
+        elif verb == IJ:
+            return partial(check_isinst, typ=(int, float))
+
+
+def floats_nan_str(*, verb, typ, ctx):
+    """
+    Rule to handle floats passing NaNs through as strings.
+
+    Python's standard JSON libraries treat `nan` and `inf` as special constants, but this is not standard JSON.
+
+    This rule converts special constants to string names.
+    """
+    if issub_safe(typ, float):
+        if verb == J2P:
+            return float
+        elif verb == P2J:
+            return convert_float
+        elif verb == IP:
+            return partial(check_isinst, typ=float)
+        elif verb == IJ:
+            return check_float
+
+
 def decimals(*, verb, typ, ctx):
-    "Rule to handle decimals natively."
+    """
+    Rule to handle decimals natively.
+
+    This rule requires that your JSON library has decimal support, e.g. simplejson.
+
+    Other JSON processors may convert values to and from floating-point; if that's a concern, consider `decimals_as_str`.
+
+    This rule will fail if passed a special constant.
+    """
     if issub_safe(typ, Decimal):
         if verb in JP:
             return Decimal
@@ -62,7 +109,13 @@ def decimals(*, verb, typ, ctx):
 
 
 def decimals_as_str(*, verb, typ, ctx):
-    "Rule to handle decimals as strings."
+    """
+    Rule to handle decimals as strings.
+
+    This rule bypasses JSON library decimal support, e.g. simplejson.
+
+    This rule will fail if passed a special constant.
+    """
     if issub_safe(typ, Decimal):
         if verb == J2P:
             return Decimal
@@ -74,8 +127,14 @@ def decimals_as_str(*, verb, typ, ctx):
             return partial(check_parse_error, parser=Decimal, error=ArithmeticError)
 
 
-def iso_dates(*, verb, typ, ctx, loose_json=True):
-    "Rule to handle iso formatted datetimes and dates."
+def iso_dates(*, verb, typ, ctx, loose_date=False):
+    """
+    Rule to handle iso formatted datetimes and dates.
+
+    This is the strict variant that simply uses the `fromisoformat` and `isoformat` methods of `date` and `datetime`.
+
+    There is a loose variant that will accept a datetime in a date. A datetime always accepts both dates and datetimes.
+    """
     if issub_safe(typ, date):
         if verb == P2J:
             if issubclass(typ, datetime):
@@ -84,13 +143,13 @@ def iso_dates(*, verb, typ, ctx, loose_json=True):
         elif verb == J2P:
             if issubclass(typ, datetime):
                 return datetime.fromisoformat
-            return convert_date_loosely if loose_json else date.fromisoformat
+            return convert_date_loosely if loose_date else date.fromisoformat
         elif verb == IP:
             return partial(
                 check_isinst, typ=datetime if issubclass(typ, datetime) else date
             )
         elif verb == IJ:
-            base = datetime if issubclass(typ, datetime) or loose_json else date
+            base = datetime if issubclass(typ, datetime) or loose_date else date
             return partial(
                 check_parse_error,
                 parser=base.fromisoformat,
@@ -98,8 +157,8 @@ def iso_dates(*, verb, typ, ctx, loose_json=True):
             )
 
 
-#: Don't accept time data in a ``date`` type.
-iso_dates_strict = partial(iso_dates, loose_json=False)
+#: A loose variant of ``iso_dates`` that will accept time data in a ``date``.
+iso_dates_loose = partial(iso_dates, loose_date=True)
 
 
 def enums(*, verb, typ, ctx):

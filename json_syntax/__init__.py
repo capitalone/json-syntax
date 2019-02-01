@@ -11,8 +11,10 @@ from .std import (  # noqa
     atoms,
     decimals,
     decimals_as_str,
+    floats,
+    floats_nan_str,
     iso_dates,
-    iso_dates_strict,
+    iso_dates_loose,
     optional,
     enums,
     faux_enums,
@@ -26,6 +28,7 @@ from .helpers import J2P, P2J  # noqa
 
 
 def std_ruleset(
+    floats=floats,
     decimals=decimals,
     dates=iso_dates,
     enums=enums,
@@ -40,6 +43,7 @@ def std_ruleset(
     """
     return RuleSet(
         atoms,
+        floats,
         decimals,
         dates,
         optional,
