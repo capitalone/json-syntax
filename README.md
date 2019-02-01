@@ -188,8 +188,10 @@ class AbstractAccount:
         return isinstance(value, dict) and value.get('class') == cls.__name__
 
 @dataclass
-class Account(AbstractAccount):
+class AccountA(AbstractAccount):
     ...
+
+encode_account = rules.lookup(typ=Union[AccountA, AccountB, AccountC], verb='python_to_json')
 ```
 
 ### Sharp edges
@@ -220,7 +222,7 @@ When decoding JSON to Python:
  * `Union[List[X], Set[X], FrozenSet[X], Tuple[X, ...]]` will only ever construct `List[X]` because all the others are also represented as JSON lists.
  * `Union[MyClassA, MyClassB, MyClassC]` can be ambiguous if these classes all share common fields. Consider using the `__json_check__` hook to differentiate. Simply adding a field named `class` or something can be unambiguous and fast.
 
-_Rules accept subclasses._ If you subclass `int`, the atoms rule will match it, but then the converter will call `int` against your instance. I *think* this makes sense.
+_Rules accept subclasses._ If you subclass `int`, the atoms rule will match it, and then the converter will call `int` against your instance. I haven't taken the time to examine what exactly to do.
 
 _Checks are stricter than converters._ For example, a check for `int` will check whether the value is an integer, whereas the converter simply calls `int` on it. Thus there are many inputs for where `MyType` would pass but `Union[MyType, Dummy]` will fail. (Note that `Optional` is special cased to look for `None` and doesn't have this problem.)
 
@@ -228,11 +230,11 @@ _Numbers are hard._ See the rules named `floats`, `floats_nan_str`, `decimals`, 
 
 ## Maintenance
 
-This package is maintained via the [poetry][1] tool. Some useful commands:
+This package is maintained via the [poetry][] tool. Some useful commands:
 
  1. Setup: `poetry install`
  2. Run tests: `poetry run pytest tests/`
  3. Reformat: `poetry run black json_syntax/ tests/`
- 4. Publish: `poetry publish`
 
-[1]: https://poetry.eustace.io/docs/#installation
+[poetry]: https://poetry.eustace.io/docs/#installation
+[gradual typing]: https://www.python.org/dev/peps/pep-0483/#summary-of-gradual-typing
