@@ -34,7 +34,7 @@ class SimpleCache:
         Handle unhashable types by warning about them.
         """
         try:
-            return self.cache.get((verb, typ), None)
+            return self.cache.get((verb, typ))
         except TypeError:
             warn(
                 f"Type {typ} is unhashable; json_syntax probably can't handle this",
@@ -55,7 +55,17 @@ class SimpleCache:
                     f"Forward reference was never fulfilled to {verb} for {typ}"
                 )
 
-            self.cache[(verb, typ)] = ForwardAction(unfulfilled)
+            forward = ForwardAction(unfulfilled)
+            self.cache[verb, typ] = forward
+            return forward
+
+    def de_flight(self, *, verb, typ, forward):
+        """
+        If a lookup fails, this removes the entry so that further attempts can be made.
+        """
+        present = self._lookup(verb, typ)
+        if present is forward:
+            del self.cache[verb, typ]
 
     def complete(self, *, verb, typ, action):
         """
@@ -66,9 +76,9 @@ class SimpleCache:
         if present is NotImplemented:
             return  # Unhashable.
         elif present is None:
-            self.cache[(verb, typ)] = action
+            self.cache[verb, typ] = action
         elif isinstance(present, ForwardAction):
             present.__call__ = action
             # Replace the cache entry, if it's never been used let the ForwardAction be
             # garbage collected.
-            self.cache[(verb, typ)] = action
+            self.cache[verb, typ] = action

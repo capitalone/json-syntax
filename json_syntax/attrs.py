@@ -52,7 +52,7 @@ def attrs_classes(
 
     inner_map = []
     for field in fields:
-        if field.init:
+        if field.init or verb == P2J:
             tup = (
                 field.name,
                 ctx.lookup(

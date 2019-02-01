@@ -4,3 +4,6 @@
 /.python-version
 /.coverage
 /htmlcov
+/pip-wheel-metadata
+setup.py
+requirements.txt

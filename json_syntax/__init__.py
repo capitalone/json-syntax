@@ -28,6 +28,7 @@ from .helpers import J2P, P2J  # noqa
 
 
 def std_ruleset(
+    *,
     floats=floats,
     decimals=decimals,
     dates=iso_dates,
@@ -35,13 +36,14 @@ def std_ruleset(
     lists=lists,
     sets=sets,
     unions=unions,
+    custom=RuleSet
 ):
     """
     Constructs a RuleSet with the provided rules. The arguments here are to make it easy to override.
 
     For example, to replace ``decimals`` with ``decimals_as_str`` just call ``std_ruleset(decimals=decimals_as_str)``
     """
-    return RuleSet(
+    return custom(
         atoms,
         floats,
         decimals,
@@ -55,5 +57,4 @@ def std_ruleset(
         named_tuples,
         tuples,
         unions,
-        cache=SimpleCache(),
     )

@@ -1,10 +1,12 @@
 from importlib import import_module
+import logging
 
 try:
     from typing import _eval_type
 except ImportError:
     _eval_type = None
 
+logger = logging.getLogger(__name__)
 J2P = "json_to_python"
 P2J = "python_to_json"
 IJ = "inspect_json"
@@ -52,12 +54,19 @@ def resolve_fwd_ref(typ, context_class):
     Tries to resolve a forward reference given a containing class. This does nothing for
     regular types.
     """
+    if typ is None:
+        raise TypeError("Tried to resolve None")
+    resolved = None
     try:
         namespace = vars(import_module(context_class.__module__))
     except AttributeError:
+        logger.warning("Couldn't determine module of %r", context_class)
+    else:
+        resolved = _eval_type(typ, namespace, {})
+    if resolved is None:
         return typ
-
-    return _eval_type(typ, namespace, {})
+    else:
+        return resolved
 
 
 if _eval_type is None:
