@@ -24,7 +24,7 @@ from .std import (  # noqa
 )
 from .attrs import attrs_classes, named_tuples, tuples
 from .unions import unions
-from .helpers import J2P, P2J  # noqa
+from .helpers import J2P, P2J, IP, IJ  # noqa
 
 
 def std_ruleset(
@@ -36,6 +36,7 @@ def std_ruleset(
     lists=lists,
     sets=sets,
     unions=unions,
+    extras=(),
     custom=RuleSet
 ):
     """
@@ -57,4 +58,5 @@ def std_ruleset(
         named_tuples,
         tuples,
         unions,
+        *extras
     )

@@ -273,10 +273,10 @@ tomlkit = ">=0.5.1,<0.6.0"
 
 [[package]]
 category = "dev"
-description = "make setup.py (setutools) from pyproject.toml (poetry)"
+description = ""
 name = "poetry-setup"
 optional = false
-python-versions = "*"
+python-versions = "^3.4"
 version = "0.3.6"
 
 [package.dependencies]
@@ -284,6 +284,11 @@ autopep8 = "*"
 jinja2 = "*"
 poetry = "*"
 yapf = "*"
+
+[package.source]
+reference = ""
+type = "directory"
+url = "/Users/ben/gits/poetry-setup"
 
 [[package]]
 category = "dev"
@@ -475,7 +480,7 @@ python-versions = "*"
 version = "0.25.0"
 
 [metadata]
-content-hash = "ce2d5b9849d566dca14eee7d59aaa0d41003ea05073475a731a702a4de8d0a63"
+content-hash = "647c66842992e8e41e2c6838e35ae9cd70a2b11548ce9bf9fcdea4a143678004"
 python-versions = "^3.6"
 
 [metadata.hashes]
@@ -507,7 +512,7 @@ pathtools = ["7c35c5421a39bb82e58018febd90e3b6e5db34c5443aaaf742b3f33d4655f1c0"]
 pkginfo = ["7424f2c8511c186cd5424bbf31045b77435b37a8d604990b79d4e70d741148bb", "a6d9e40ca61ad3ebd0b72fbadd4fba16e4c0e4df0428c041e01e06eb6ee71f32"]
 pluggy = ["8ddc32f03971bfdf900a81961a48ccf2fb677cf7715108f85295c67405798616", "980710797ff6a041e9a73a5787804f848996ecaa6f8a1b1e08224a5894f2074a"]
 poetry = ["9fc14cd2230947d5b176a9481edc6be4325ce88cdba4cc2dafce4facc46849c8", "e76f11e5dfd0edfc0cd2cdd64463703f1223bac56758c1f3a0080838f01b43a6"]
-poetry-setup = ["18204efc69bc3a79d19c905142d986e76d9a9dd18f4480f336dc6a7aad6a43b3"]
+poetry-setup = []
 py = ["bf92637198836372b520efcba9e020c330123be8ce527e535d185ed4b6f45694", "e76826342cefe3c3d5f7e8ee4316b80d1dd8a300781612ddbc765c17ba25a6c6"]
 pycodestyle = ["95a2219d12372f05704562a14ec30bc76b05a5b297b21a5dfe3f6fac3491ae56", "e40a936c9a450ad81df37f549d676d127b1b66000a6c500caa2b085bc0ca976c"]
 pylev = ["063910098161199b81e453025653ec53556c1be7165a9b7c50be2f4d57eae1c3", "1d29a87beb45ebe1e821e7a3b10da2b6b2f4c79b43f482c2df1a1f748a6e114e"]

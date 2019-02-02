@@ -134,7 +134,7 @@ def named_tuples(*, verb, typ, ctx):
             convert_attrs_to_dict, post_hook=None, inner_map=tuple(inner_map)
         )
     elif verb == IJ:
-        return partial(check_dict, inner_map=tuple(inner_map))
+        return partial(check_dict, pre_hook=identity, inner_map=tuple(inner_map))
 
 
 def tuples(*, verb, typ, ctx):

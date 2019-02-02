@@ -54,8 +54,6 @@ def resolve_fwd_ref(typ, context_class):
     Tries to resolve a forward reference given a containing class. This does nothing for
     regular types.
     """
-    if typ is None:
-        raise TypeError("Tried to resolve None")
     resolved = None
     try:
         namespace = vars(import_module(context_class.__module__))

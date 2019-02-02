@@ -145,4 +145,4 @@ def convert_union(value, *, steps, typename):
     for check, convert in steps:
         if check(value):
             return convert(value)
-    raise ValueError(f"Expected value of type {typename}")
+    raise ValueError(f"Expected value of type {typename} got {value!r}")

@@ -231,6 +231,10 @@ class AccountA(AbstractAccount):
 encode_account = rules.lookup(typ=Union[AccountA, AccountB, AccountC], verb='python_to_json')
 ```
 
+### Adding custom rules
+
+See [the examples][] for details on custom rules.
+
 ### Sharp edges
 
 _Alpha release status._ This API may change, there are probably bugs!
@@ -299,3 +303,4 @@ description would be that this is a "poorly" discriminated union. [↩](#a1)
 
 [poetry]: https://poetry.eustace.io/docs/#installation
 [gradual typing]: https://www.python.org/dev/peps/pep-0483/#summary-of-gradual-typing
+[the examples]: json_syntax/examples/
