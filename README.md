@@ -14,9 +14,9 @@ Further, we have annotations in Python 3! Even if you're not using a type checke
 labeling the types of fields makes complex data structures far more comprehensible.
 
 This library is aimed at projects that have a complex JSON schema that they're trying to
-structure using libraries like [`attrs`][].
+structure using libraries like [attrs][].
 
- * It exploits [gradual typing][] via annotations, [`typing`][] and [`dataclasses`][]
+ * It exploits [gradual typing][] via annotations, [typing][] and [dataclasses][]
  * It expects classes to be *statically* described using types
     * But a fallback can be provided to handle data described at runtime
     * It provides hooks to normalize legacy inputs
@@ -125,7 +125,7 @@ them, and constructs an action to represent them.
 
 ### Using generic types
 
-Generally, the [`typing`][] module simple provides capital letter type names that obviously
+Generally, the [typing][] module simple provides capital letter type names that obviously
 correspond to the internal types. [See TYPES for a more thorough introduction][types].
 
 And you specify the type of the contents as a parameter in square brackets.

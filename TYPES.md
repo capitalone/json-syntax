@@ -8,7 +8,7 @@ Type hints are used by static type checkers like [mypy][] and [Pyre][] to prove 
 
 The premise of "gradual typing" is that it's optional. If code works, leave it alone. If you chase down a `TypeError`, though, you can add a few annotations directly in the source rather than write yet another unit test.
 
-Generic types are the weird capitalized square bracketed types like `Dict[str, Tuple[int, ...]]` provided by the [`typing`][] module.
+Generic types are the weird capitalized square bracketed types like `Dict[str, Tuple[int, ...]]` provided by the [typing][] module.
 
 ## What's the difference between a type, a type hint and a generic type?
 
@@ -27,7 +27,7 @@ To summarize them:
     * Largely ignored by the interpreter.
     * (Also an argument to a function or member of a class has a hint.)
  * Generic types
-    * Imported from [`typing`][].
+    * Imported from [typing][].
     * Look like `FrozenSet[Decimal]`, `Dict[str, Tuple[int, str]]`.
     * Used in hints to describe the type of a variable with greater precision.
 
@@ -43,7 +43,7 @@ And just as type checkers can use type hints to generate proofs, json-syntax can
 
 This document won't go into how type checkers use hints, and [mypy][] and [Pyre][] both have tutorials. In a nutshell, though, you can put hints in your function signatures.
 
-For what we're trying to do, which is describe your data so you can convert it to and from JSON, the nicest way is through either the [`attrs`][] package or the (since 3.7) standard [`dataclasses`][] package. They're similar because `dataclasses` is a standardized `attrs`. It typically looks something like this:
+For what we're trying to do, which is describe your data so you can convert it to and from JSON, the nicest way is through either the [attrs][] package or the (since 3.7) standard [dataclasses][] package. They're similar because `dataclasses` is a standardized `attrs`. It typically looks something like this:
 
 ```python
 @attr.s(auto_attribs=True)
@@ -217,7 +217,7 @@ def convert_set(value, inner):
     return set(map(inner, value))
 ```
 
-We use the [`functools.partial`][functools] builtin<sup id="a3">[3](#f3)</sup> to put this together, and wind up with an expression like:
+We use the [functools.partial][functools] builtin<sup id="a3">[3](#f3)</sup> to put this together, and wind up with an expression like:
 
 ```python
 decoder = partial(convert_set, inner=convert_date)
@@ -285,7 +285,7 @@ The `Union` generic type lets you select alternate types, and this is supported 
 
 <b id="f3">3</b>: Using `partial` ensures that the converter can be pickled; not sure at this time if that's really helpful but it's easy to do. It should also make an `explain` function relatively easy to write.[↩](#a3)
 
-<b id="f4">4</b>: Pyre only seems to support `dataclasses`.
+<b id="f4">4</b>: Pyre only seems to support `dataclasses`.[↩](#a4)
 
 [tutorial]: https://docs.python.org/3/tutorial/index.html
 [dataclasses]: https://docs.python.org/3/library/dataclasses.html
