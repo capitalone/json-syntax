@@ -37,7 +37,7 @@ def std_ruleset(
     sets=sets,
     unions=unions,
     extras=(),
-    custom=RuleSet
+    custom=RuleSet,
 ):
     """
     Constructs a RuleSet with the provided rules. The arguments here are to make it easy to override.
@@ -58,5 +58,5 @@ def std_ruleset(
         named_tuples,
         tuples,
         unions,
-        *extras
+        *extras,
     )

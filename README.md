@@ -165,7 +165,7 @@ but when converting from JSON to Python, the check may be examining strings and 
 fields.
 
 Thus, ambiguous values, especially JSON representations, may confuse the decoder.
-See the section on [sharp edges](#sharp edges) for more details.
+See the section on [sharp edges][sharp] for more details.
 
 ### Hooks
 
@@ -310,3 +310,4 @@ description would be that this is a "poorly" discriminated union. [↩](#a1)
 [types]: https://github.com/UnitedIncome/json-syntax/blob/master/TYPES.md
 [attrs]: https://attrs.readthedocs.io/en/stable/
 [dataclasses]: https://docs.python.org/3/library/dataclasses.html
+[sharp]: https://github.com/UnitedIncome/json-syntax/blob/master/README.md#sharp-edges

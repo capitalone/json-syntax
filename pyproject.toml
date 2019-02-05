@@ -5,6 +5,7 @@ description = "Generates functions to convert Python classes to JSON dumpable ob
 authors = ["Ben Samuel <bsamuel@unitedincome.com>"]
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/UnitedIncome/json-syntax"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -12,7 +13,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.1"
@@ -20,7 +21,10 @@ attrs = "^18.2"
 black = {version = "^18.3-alpha.0",allows-prereleases = true}
 pytest-cov = "^2.6"
 pytest-watch = "^4.2"
-poetry-setup = "^0.3.6"
+
+[tool.black]
+line-length = 88
+py36 = true
 
 [build-system]
 requires = ["poetry>=0.12"]
