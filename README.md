@@ -14,9 +14,9 @@ Further, we have annotations in Python 3! Even if you're not using a type checke
 labeling the types of fields makes complex data structures far more comprehensible.
 
 This library is aimed at projects that have a complex JSON schema that they're trying to
-structure using libraries like `attrs`.
+structure using libraries like [`attrs`][].
 
- * It exploits [gradual typing][] via annotations, `typing` and `dataclasses`
+ * It exploits [gradual typing][] via annotations, [`typing`][] and [`dataclasses`][]
  * It expects classes to be *statically* described using types
     * But a fallback can be provided to handle data described at runtime
     * It provides hooks to normalize legacy inputs
@@ -125,8 +125,8 @@ them, and constructs an action to represent them.
 
 ### Using generic types
 
-Generally, the `typing` module simple provides capital letter type names that obviously
-correspond to the internal types.
+Generally, the [`typing`][] module simple provides capital letter type names that obviously
+correspond to the internal types. [See TYPES for a more thorough introduction][types].
 
 And you specify the type of the contents as a parameter in square brackets.
 
@@ -165,6 +165,7 @@ but when converting from JSON to Python, the check may be examining strings and 
 fields.
 
 Thus, ambiguous values, especially JSON representations, may confuse the decoder.
+See the section on [sharp edges](#sharp edges) for more details.
 
 ### Hooks
 
@@ -248,6 +249,7 @@ for you. And, by design, if you're translating from JSON to Python, it's assumed
 want to be tolerant of extra data.
 
 _Everything to do with typing._ It's a bit magical and sort of wasn't designed for this.
+[We have a guide to it to try and help][types].
 
 _Union types._ You can use `typing.Union` to allow a member to be one of some number of
 alternates, but there are some caveats. These are documented in code in `test_unions`,
@@ -295,7 +297,7 @@ This package is maintained via the [poetry][] tool. Some useful commands:
 
 ### Notes
 
-<b id="f1">1</b> A discriminated union has a tag that identifies the variant, such as
+<b id="f1">1</b>: A discriminated union has a tag that identifies the variant, such as
 status codes that indicate success and a payload, or some error. Strictly, all unions
 have to be "discriminated" in some way. In the `unions` rule, the discriminant is the
 class information in Python, and the structure of the JSON data. A less flattering
@@ -303,4 +305,8 @@ description would be that this is a "poorly" discriminated union. [↩](#a1)
 
 [poetry]: https://poetry.eustace.io/docs/#installation
 [gradual typing]: https://www.python.org/dev/peps/pep-0483/#summary-of-gradual-typing
-[the examples]: json_syntax/examples/
+[the examples]: https://github.com/UnitedIncome/json-syntax/tree/master/json_syntax/examples
+[typing]: https://docs.python.org/3/library/typing.html
+[types]: https://github.com/UnitedIncome/json-syntax/blob/master/TYPES.md
+[attrs]: https://attrs.readthedocs.io/en/stable/
+[dataclasses]: https://docs.python.org/3/library/dataclasses.html
