@@ -110,7 +110,7 @@ them, and constructs an action to represent them.
 ...     ], Decimal('77.00')
 ... )
 
->>> encode_account()
+>>> encode_account(sample_value)
 {
   'user': 'bob',
   'transactions': [

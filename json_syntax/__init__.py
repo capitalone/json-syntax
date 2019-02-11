@@ -38,6 +38,7 @@ def std_ruleset(
     unions=unions,
     extras=(),
     custom=RuleSet,
+    cache=None,
 ):
     """
     Constructs a RuleSet with the provided rules. The arguments here are to make it easy to override.
@@ -59,4 +60,5 @@ def std_ruleset(
         tuples,
         unions,
         *extras,
+        cache=cache
     )

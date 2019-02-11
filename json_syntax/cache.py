@@ -82,3 +82,22 @@ class SimpleCache:
             # Replace the cache entry, if it's never been used let the ForwardAction be
             # garbage collected.
             self.cache[verb, typ] = action
+
+
+class ThreadLocalCache(SimpleCache):
+    '''
+    Avoids threads conflicting while looking up rules by keeping the cache in thread local storage.
+
+    You can also prevent this by looking up rules during module loading.
+    '''
+    def __init__(self):
+        self._local = threading.local()
+
+    @property
+    def cache(self):
+        local = self._local
+        try:
+            return local.cache
+        except AttributeError:
+            _cache = local.cache = {}
+            return _cache
