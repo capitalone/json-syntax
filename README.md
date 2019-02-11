@@ -84,7 +84,7 @@ some intermediate services don't reliably retain decimal values, we're going to
 represent them in JSON as strings.
 
 ```python
->>> rules = syn.std_ruleset(decimals=decimals_as_str)
+>>> rules = syn.std_ruleset(decimals=syn.decimals_as_str)
 >>> encode_account = rules.lookup(typ=Account, verb='python_to_json')
 >>> decode_account = rules.lookup(typ=Account, verb='json_to_python')
 ```
