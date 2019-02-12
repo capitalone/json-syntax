@@ -1,3 +1,5 @@
+from .helpers import ErrorContext
+
 from datetime import datetime
 import math
 from operator import attrgetter
@@ -69,7 +71,8 @@ def check_optional(value, *, inner):
 
 
 def convert_collection(value, *, inner, con):
-    return con(map(inner, value))
+    with ErrorContext("[:]"):
+        return con(map(inner, value))
 
 
 def check_collection(value, *, inner, con):
@@ -77,7 +80,8 @@ def check_collection(value, *, inner, con):
 
 
 def convert_mapping(value, *, key, val, con):
-    return con((key(k), val(v)) for k, v in value.items())
+    with ErrorContext("[:]"):
+        return con((key(k), val(v)) for k, v in value.items())
 
 
 def check_mapping(value, *, key, val, con):
@@ -88,12 +92,13 @@ def convert_dict_to_attrs(value, *, pre_hook, inner_map, con):
     value = pre_hook(value)
     args = {}
     for name, inner in inner_map:
-        try:
-            arg = value[name]
-        except KeyError:
-            pass
-        else:
-            args[name] = inner(arg)
+        with ErrorContext(f"[{name!r}]"):
+            try:
+                arg = value[name]
+            except KeyError:
+                pass
+            else:
+                args[name] = inner(arg)
     return con(**args)
 
 
@@ -102,31 +107,34 @@ def check_dict(value, *, inner_map, pre_hook):
     if not isinstance(value, dict):
         return False
     for name, inner, required in inner_map:
-        try:
-            arg = value[name]
-        except KeyError:
-            if required:
-                return False
-        else:
-            if not inner(arg):
-                return False
+        with ErrorContext(f"[{name!r}]"):
+            try:
+                arg = value[name]
+            except KeyError:
+                if required:
+                    return False
+            else:
+                if not inner(arg):
+                    return False
     return True
 
 
 def convert_attrs_to_dict(value, *, post_hook, inner_map):
     out = {}
     for name, inner, default in inner_map:
-        field = getattr(value, name)
-        if field == default:
-            continue
-        out[name] = inner(field)
+        with ErrorContext(f".{name}"):
+            field = getattr(value, name)
+            if field == default:
+                continue
+            out[name] = inner(field)
     if post_hook is not None:
         out = getattr(value, post_hook)(out)
     return out
 
 
 def convert_tuple_as_list(value, *, inner, con):
-    return con(cvt(val) for val, cvt in zip(value, inner))
+    with ErrorContext("[:]"):
+        return con(cvt(val) for val, cvt in zip(value, inner))
 
 
 def check_tuple_as_list(value, *, inner, con):

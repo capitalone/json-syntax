@@ -60,5 +60,5 @@ def std_ruleset(
         tuples,
         unions,
         *extras,
-        cache=cache
+        cache=cache,
     )

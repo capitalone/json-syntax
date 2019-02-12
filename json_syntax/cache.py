@@ -85,11 +85,12 @@ class SimpleCache:
 
 
 class ThreadLocalCache(SimpleCache):
-    '''
+    """
     Avoids threads conflicting while looking up rules by keeping the cache in thread local storage.
 
     You can also prevent this by looking up rules during module loading.
-    '''
+    """
+
     def __init__(self):
         self._local = threading.local()
 
