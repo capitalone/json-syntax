@@ -6,8 +6,20 @@ from json_syntax.helpers import J2P, P2J, IP, IJ, JPI, JP, II
 
 import attr
 from collections import namedtuple
-from dataclasses import dataclass
+try:
+    from dataclasses import dataclass
+except ImportError:
+    dataclass = lambda cls: None
 from typing import NamedTuple, Tuple
+
+try:
+    from tests.types_attrs_ann import flat_types, hook_types
+except ImportError:
+    from tests.types_attrs_noann import flat_types, hook_types
+
+
+skip_if = pytest.mark.skip_if
+param = pytest.param
 
 
 class Fail:
@@ -26,18 +38,6 @@ class Ctx:
             return lambda val: isinstance(val, typ)
 
 
-@attr.s(auto_attribs=True)
-class Flat1:
-    a: int
-    b: str = "default"
-
-
-@dataclass
-class Flat2:
-    a: int
-    b: str = "default"
-
-
 def test_attrs_classes_disregards():
     "Test that attrs_classes disregards unknown verbs and types."
 
@@ -48,7 +48,14 @@ def test_attrs_classes_disregards():
     assert at.attrs_classes(verb="dummy", typ=Flat2, ctx=Fail()) is None
 
 
-@pytest.mark.parametrize("FlatCls", [Flat1, Flat2])
+@skip_if(dataclass is None, "dataclasses not present")
+def test_attrs_classes_disregards_dc():
+    "Test that attrs_classes disregards dataclass with unknown types."
+
+    assert at.attrs_classes(verb="dummy", typ=Flat2, ctx=Fail()) is None
+
+
+@pytest.mark.parametrize("FlatCls", flat_types)
 def test_attrs_encoding(FlatCls):
     "Test that attrs_classes encodes and decodes a flat class."
 
@@ -73,34 +80,7 @@ def test_attrs_encoding(FlatCls):
     assert not inspect({"b": "foo"})
 
 
-class Hooks:
-    @classmethod
-    def __json_pre_decode__(cls, value):
-        if isinstance(value, list):
-            value = {"a": value[0], "b": value[1]}
-        return value
-
-    @classmethod
-    def __json_check__(cls, value):
-        return value.get("_type_") == "Hook"
-
-    def __json_post_encode__(cls, value):
-        return dict(value, _type_="Hook")
-
-
-@attr.s(auto_attribs=True)
-class Hook1(Hooks):
-    a: int
-    b: str = "default"
-
-
-@dataclass
-class Hook2(Hooks):
-    a: int
-    b: str = "default"
-
-
-@pytest.mark.parametrize("HookCls", [Hook1, Hook2])
+@pytest.mark.parametrize("HookCls", hook_types)
 def test_attrs_hooks(HookCls):
     "Test that attrs_classes enables hooks."
 
@@ -145,7 +125,13 @@ class Named1(NamedTuple):
     b: str = "default"
 
 
-Named2 = namedtuple("Named2", ["a", "b"], defaults=["default"])
+Named2 = namedtuple("Named2", ["a", "b"])
+
+
+try:
+    Named3 = namedtuple("Named2", ["a", "b"], defaults=["default"])
+except TypeError:
+    Named3 = None
 
 
 def test_named_tuples_disregards():
@@ -158,13 +144,17 @@ def test_named_tuples_disregards():
     assert at.named_tuples(verb="dummy", typ=Named2, ctx=Fail()) is None
 
 
-@pytest.mark.parametrize("NamedCls,a", [(Named1, 33), (Named2, "str")])
-def test_named_tuples_encoding(NamedCls, a):
+@pytest.mark.parametrize("NamedCls,a,has_default", [
+    (Named1, 33, True),
+    (Named2, "str", False),
+    param(Named3, "str", True, marks=skip_if(Named3 is None, "namedtuple does not accept defaults"))
+])
+def test_named_tuples_encoding(NamedCls, a, has_default):
     "Test that named_tuples encodes and decodes a flat class."
 
     encoder = at.named_tuples(verb=P2J, typ=NamedCls, ctx=Ctx2())
     assert encoder(NamedCls(a, "foo")) == {"a": a, "b": "foo"}
-    assert encoder(NamedCls(a, "default")) == {"a": a}
+    assert encoder(NamedCls(a, "default")) == {"a": a} if has_default else {"a": a, "b": "default"}
 
     decoder = at.named_tuples(verb=J2P, typ=NamedCls, ctx=Ctx2())
     assert decoder({"a": a, "b": "foo"}) == NamedCls(a, "foo")

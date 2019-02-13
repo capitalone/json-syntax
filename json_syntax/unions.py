@@ -5,7 +5,7 @@ from functools import partial
 from typing import Union
 
 
-def unions(*, verb, typ, ctx):
+def unions(verb, typ, ctx):
     """
     Handle undiscriminated unions of the form ``Union[A, B, C, D]`` by inspecting the
     inner types one by one.

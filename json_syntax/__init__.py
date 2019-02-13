@@ -28,7 +28,6 @@ from .helpers import J2P, P2J, IP, IJ  # noqa
 
 
 def std_ruleset(
-    *,
     floats=floats,
     decimals=decimals,
     dates=iso_dates,

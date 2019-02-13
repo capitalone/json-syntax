@@ -24,7 +24,6 @@ from functools import partial
 
 
 def attrs_classes(
-    *,
     verb,
     typ,
     ctx,
@@ -86,7 +85,7 @@ def attrs_classes(
         return partial(check_dict, inner_map=inner_map, pre_hook=pre_hook_method)
 
 
-def named_tuples(*, verb, typ, ctx):
+def named_tuples(verb, typ, ctx):
     """
     Handle a ``NamedTuple(name, [('field', type), ('field', type)])`` type.
 
@@ -137,7 +136,7 @@ def named_tuples(*, verb, typ, ctx):
         return partial(check_dict, pre_hook=identity, inner_map=tuple(inner_map))
 
 
-def tuples(*, verb, typ, ctx):
+def tuples(verb, typ, ctx):
     """
     Handle a ``Tuple[type, type, type]`` product type. Use a ``NamedTuple`` if you don't
     want a list.

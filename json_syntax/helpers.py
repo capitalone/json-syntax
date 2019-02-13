@@ -22,7 +22,7 @@ def identity(value):
     return value
 
 
-def has_origin(typ, origin, *, num_args=None):
+def has_origin(typ, origin, num_args=None):
     """
     Determines if a concrete class (a generic class with arguments) matches an origin
     and has a specified number of arguments.

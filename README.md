@@ -295,6 +295,18 @@ This package is maintained via the [poetry][] tool. Some useful commands:
  2. Run tests: `poetry run pytest tests/`
  3. Reformat: `poetry run black json_syntax/ tests/`
 
+### Setting up tox
+
+You'll want pyenv, then install the pythons:
+
+   curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+   pyenv install --list | egrep '^ *3\.[4567]|^ *pypy3.5'
+   # figure out what versions you want
+   for v in 3.4.9 3.5.10 ...; do
+      pyenv install $v
+      PYENV_VERSION=$v python get-pip.py
+   done
+
 ### Notes
 
 <b id="f1">1</b>: A discriminated union has a tag that identifies the variant, such as

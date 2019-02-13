@@ -334,12 +334,12 @@ def test_iso_datetimes():
 
     decoder = std.iso_dates(verb=J2P, typ=datetime, ctx=Fail())
     assert decoder("6666-06-06T12:12:12.987654") == datetime(
-        6666, 6, 6, 12, 12, 12, 987_654
+        6666, 6, 6, 12, 12, 12, 987654
     )
 
     encoder = std.iso_dates(verb=P2J, typ=datetime, ctx=Fail())
     assert (
-        encoder(datetime(6666, 6, 6, 12, 12, 12, 987_654))
+        encoder(datetime(6666, 6, 6, 12, 12, 12, 987654))
         == "6666-06-06T12:12:12.987654"
     )
 

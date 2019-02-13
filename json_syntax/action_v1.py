@@ -9,7 +9,7 @@ def convert_date_loosely(value):
     return datetime.fromisoformat(value).date()
 
 
-def check_parse_error(value, *, parser, error):
+def check_parse_error(value, parser, error):
     try:
         parser(value)
     except error:
@@ -18,7 +18,7 @@ def check_parse_error(value, *, parser, error):
         return True
 
 
-def check_isinst(value, *, typ):
+def check_isinst(value, typ):
     return isinstance(value, typ)
 
 
@@ -52,43 +52,43 @@ def convert_none(value):
     return None
 
 
-def check_str_enum(value, *, mapping):
+def check_str_enum(value, mapping):
     return isinstance(value, str) and value in mapping
 
 
-def convert_str_enum(value, *, mapping):
+def convert_str_enum(value, mapping):
     return mapping[value]
 
 
-def convert_optional(value, *, inner):
+def convert_optional(value, inner):
     if value is None:
         return None
     return inner(value)
 
 
-def check_optional(value, *, inner):
+def check_optional(value, inner):
     return value is None or inner(value)
 
 
-def convert_collection(value, *, inner, con):
+def convert_collection(value, inner, con):
     with ErrorContext("[:]"):
         return con(map(inner, value))
 
 
-def check_collection(value, *, inner, con):
+def check_collection(value, inner, con):
     return isinstance(value, con) and all(map(inner, value))
 
 
-def convert_mapping(value, *, key, val, con):
+def convert_mapping(value, key, val, con):
     with ErrorContext("[:]"):
         return con((key(k), val(v)) for k, v in value.items())
 
 
-def check_mapping(value, *, key, val, con):
+def check_mapping(value, key, val, con):
     return isinstance(value, con) and all(key(k) and val(v) for k, v in value.items())
 
 
-def convert_dict_to_attrs(value, *, pre_hook, inner_map, con):
+def convert_dict_to_attrs(value, pre_hook, inner_map, con):
     value = pre_hook(value)
     args = {}
     for name, inner in inner_map:
@@ -102,7 +102,7 @@ def convert_dict_to_attrs(value, *, pre_hook, inner_map, con):
     return con(**args)
 
 
-def check_dict(value, *, inner_map, pre_hook):
+def check_dict(value, inner_map, pre_hook):
     value = pre_hook(value)
     if not isinstance(value, dict):
         return False
@@ -119,7 +119,7 @@ def check_dict(value, *, inner_map, pre_hook):
     return True
 
 
-def convert_attrs_to_dict(value, *, post_hook, inner_map):
+def convert_attrs_to_dict(value, post_hook, inner_map):
     out = {}
     for name, inner, default in inner_map:
         with ErrorContext(f".{name}"):
@@ -132,12 +132,12 @@ def convert_attrs_to_dict(value, *, post_hook, inner_map):
     return out
 
 
-def convert_tuple_as_list(value, *, inner, con):
+def convert_tuple_as_list(value, inner, con):
     with ErrorContext("[:]"):
         return con(cvt(val) for val, cvt in zip(value, inner))
 
 
-def check_tuple_as_list(value, *, inner, con):
+def check_tuple_as_list(value, inner, con):
     return (
         isinstance(value, con)
         and len(value) == len(inner)
@@ -145,11 +145,11 @@ def check_tuple_as_list(value, *, inner, con):
     )
 
 
-def check_union(value, *, steps):
+def check_union(value, steps):
     return any(step(value) for step in steps)
 
 
-def convert_union(value, *, steps, typename):
+def convert_union(value, steps, typename):
     for check, convert in steps:
         if check(value):
             return convert(value)

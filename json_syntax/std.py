@@ -32,7 +32,7 @@ returns a conversion function for that verb.
 """
 
 
-def atoms(*, verb, typ, ctx):
+def atoms(verb, typ, ctx):
     "Rule to handle atoms on both sides."
     if issub_safe(typ, (str, int, NoneType)):
         if verb in JP:
@@ -51,7 +51,7 @@ def atoms(*, verb, typ, ctx):
                     return partial(check_isinst, typ=base)
 
 
-def floats(*, verb, typ, ctx):
+def floats(verb, typ, ctx):
     """
     Rule to handle floats passing NaNs through unaltered.
 
@@ -72,7 +72,7 @@ def floats(*, verb, typ, ctx):
             return partial(check_isinst, typ=(int, float))
 
 
-def floats_nan_str(*, verb, typ, ctx):
+def floats_nan_str(verb, typ, ctx):
     """
     Rule to handle floats passing NaNs through as strings.
 
@@ -91,7 +91,7 @@ def floats_nan_str(*, verb, typ, ctx):
             return check_float
 
 
-def decimals(*, verb, typ, ctx):
+def decimals(verb, typ, ctx):
     """
     Rule to handle decimals natively.
 
@@ -108,7 +108,7 @@ def decimals(*, verb, typ, ctx):
             return partial(check_isinst, typ=Decimal)
 
 
-def decimals_as_str(*, verb, typ, ctx):
+def decimals_as_str(verb, typ, ctx):
     """
     Rule to handle decimals as strings.
 
@@ -127,7 +127,7 @@ def decimals_as_str(*, verb, typ, ctx):
             return partial(check_parse_error, parser=Decimal, error=ArithmeticError)
 
 
-def iso_dates(*, verb, typ, ctx, loose_date=False):
+def iso_dates(verb, typ, ctx, loose_date=False):
     """
     Rule to handle iso formatted datetimes and dates.
 
@@ -161,7 +161,7 @@ def iso_dates(*, verb, typ, ctx, loose_date=False):
 iso_dates_loose = partial(iso_dates, loose_date=True)
 
 
-def enums(*, verb, typ, ctx):
+def enums(verb, typ, ctx):
     "Rule to convert between enumerated types and strings."
     if issub_safe(typ, Enum):
         if verb == P2J:
@@ -174,7 +174,7 @@ def enums(*, verb, typ, ctx):
             return partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
 
 
-def faux_enums(*, verb, typ, ctx):
+def faux_enums(verb, typ, ctx):
     "Rule to fake an Enum by actually using strings."
     if issub_safe(typ, Enum):
         if verb in JP:
@@ -184,7 +184,7 @@ def faux_enums(*, verb, typ, ctx):
             return partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
 
 
-def optional(*, verb, typ, ctx):
+def optional(verb, typ, ctx):
     """
     Handle an ``Optional[inner]`` by passing ``None`` through.
     """
@@ -208,7 +208,7 @@ def optional(*, verb, typ, ctx):
         return partial(check_optional, inner=inner)
 
 
-def lists(*, verb, typ, ctx):
+def lists(verb, typ, ctx):
     """
     Handle a ``List[type]`` or ``Tuple[type, ...]``.
 
@@ -233,7 +233,7 @@ def lists(*, verb, typ, ctx):
         return partial(check_collection, inner=inner, con=con)
 
 
-def sets(*, verb, typ, ctx):
+def sets(verb, typ, ctx):
     """
     Handle a ``Set[type]`` or ``FrozenSet[type]``.
     """
@@ -250,7 +250,7 @@ def sets(*, verb, typ, ctx):
         return partial(check_collection, inner=inner, con=con)
 
 
-def _stringly(*, verb, typ, ctx):
+def _stringly(verb, typ, ctx):
     """
     Rule to handle types that reliably convert directly to strings.
 
@@ -270,7 +270,7 @@ def _stringly(*, verb, typ, ctx):
             return action
 
 
-def dicts(*, verb, typ, ctx):
+def dicts(verb, typ, ctx):
     """
     Handle a ``Dict[key, value]`` where key is a string, integer or enum type.
     """

@@ -11,7 +11,7 @@ class RuleSet:
         self.rules = rules
         self.cache = cache or SimpleCache()
 
-    def lookup(self, *, verb, typ, accept_missing=False):
+    def lookup(self, verb, typ, accept_missing=False):
         logger.log(TRACE, "lookup(%s, %r): start", verb, typ)
         if typ is None:
             if not accept_missing:
@@ -42,5 +42,5 @@ class RuleSet:
         finally:
             self.cache.de_flight(verb=verb, typ=typ, forward=forward)
 
-    def fallback(self, *, verb, typ):
+    def fallback(self, verb, typ):
         pass

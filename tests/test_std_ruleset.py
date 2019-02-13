@@ -1,9 +1,12 @@
-from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from enum import Enum
 from typing import Optional, List
 import json_syntax as syn
+try:
+    from dataclasses import dataclass
+except ImportError:
+    from attr import dataclass
 
 
 @dataclass

@@ -25,7 +25,7 @@ class SimpleCache:
     def __init__(self):
         self.cache = {}
 
-    def get(self, *, verb, typ):
+    def get(self, verb, typ):
         result = self._lookup(verb, typ)
         return result if result is not NotImplemented else None
 
@@ -42,7 +42,7 @@ class SimpleCache:
             )
             return NotImplemented
 
-    def in_flight(self, *, verb, typ):
+    def in_flight(self, verb, typ):
         """
         Called when we begin determining the action for a type. We construct a forward
         action that will be fulfilled by the ``complete`` call.
@@ -59,7 +59,7 @@ class SimpleCache:
             self.cache[verb, typ] = forward
             return forward
 
-    def de_flight(self, *, verb, typ, forward):
+    def de_flight(self, verb, typ, forward):
         """
         If a lookup fails, this removes the entry so that further attempts can be made.
         """
@@ -67,7 +67,7 @@ class SimpleCache:
         if present is forward:
             del self.cache[verb, typ]
 
-    def complete(self, *, verb, typ, action):
+    def complete(self, verb, typ, action):
         """
         Once a type is complete, we fulfill any ForwardActions and replace the cache
         entry with the actual action.
