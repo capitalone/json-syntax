@@ -1,24 +1,39 @@
-from .helpers import has_origin, issub_safe, NoneType, JP, J2P, P2J, IJ, IP, II, JPI
+from .helpers import (
+    has_origin,
+    get_origin,
+    issub_safe,
+    NoneType,
+    JP,
+    J2P,
+    P2J,
+    IJ,
+    IP,
+    II,
+    JPI,
+)
 from .action_v1 import (
     check_collection,
     check_float,
     check_isinst,
+    check_has_type,
     check_mapping,
     check_optional,
     check_parse_error,
     check_str_enum,
     convert_collection,
-    convert_date_loosely,
+    convert_date,
+    convert_datetime,
     convert_enum_str,
     convert_float,
     convert_mapping,
     convert_none,
     convert_optional,
     convert_str_enum,
+    convert_time,
 )
 
 from collections import OrderedDict
-from datetime import datetime, date
+from datetime import datetime, date, time
 from decimal import Decimal
 from enum import Enum
 from functools import partial
@@ -127,38 +142,36 @@ def decimals_as_str(verb, typ, ctx):
             return partial(check_parse_error, parser=Decimal, error=ArithmeticError)
 
 
-def iso_dates(verb, typ, ctx, loose_date=False):
+def iso_dates(verb, typ, ctx):
     """
     Rule to handle iso formatted datetimes and dates.
 
     This is the strict variant that simply uses the `fromisoformat` and `isoformat` methods of `date` and `datetime`.
 
-    There is a loose variant that will accept a datetime in a date. A datetime always accepts both dates and datetimes.
+    There is a loose variant in the examples that will accept a datetime in a date. A datetime always accepts both
+    dates and datetimes.
     """
-    if issub_safe(typ, date):
-        if verb == P2J:
-            if issubclass(typ, datetime):
-                return datetime.isoformat
-            return date.isoformat
-        elif verb == J2P:
-            if issubclass(typ, datetime):
-                return datetime.fromisoformat
-            return convert_date_loosely if loose_date else date.fromisoformat
-        elif verb == IP:
+    if typ not in (date, datetime, time):
+        return
+    if verb == P2J:
+        return typ.isoformat
+    elif verb == IP:
+        return partial(check_has_type, typ=typ)
+    elif verb in (J2P, IJ):
+        if typ == date:
+            parse = convert_date
+        elif typ == datetime:
+            parse = convert_datetime
+        elif typ == time:
+            parse = convert_time
+        else:
+            return
+        if verb == J2P:
+            return parse
+        else:
             return partial(
-                check_isinst, typ=datetime if issubclass(typ, datetime) else date
+                check_parse_error, parser=parse, error=(TypeError, ValueError)
             )
-        elif verb == IJ:
-            base = datetime if issubclass(typ, datetime) or loose_date else date
-            return partial(
-                check_parse_error,
-                parser=base.fromisoformat,
-                error=(TypeError, ValueError),
-            )
-
-
-#: A loose variant of ``iso_dates`` that will accept time data in a ``date``.
-iso_dates_loose = partial(iso_dates, loose_date=True)
 
 
 def enums(verb, typ, ctx):
@@ -198,7 +211,7 @@ def optional(verb, typ, ctx):
             if arg is not NoneType:
                 inner = arg
         if inner is None:
-            raise TypeError(f"Could not find inner type for Optional: {typ}")
+            raise TypeError("Could not find inner type for Optional: " + str(typ))
     else:
         return
     inner = ctx.lookup(verb=verb, typ=inner)
@@ -226,7 +239,7 @@ def lists(verb, typ, ctx):
     else:
         return
     inner = ctx.lookup(verb=verb, typ=inner)
-    con = list if verb in (P2J, IJ) else typ.__origin__
+    con = list if verb in (P2J, IJ) else get_origin(typ)
     if verb in JP:
         return partial(convert_collection, inner=inner, con=con)
     elif verb in II:
@@ -242,7 +255,7 @@ def sets(verb, typ, ctx):
     if not has_origin(typ, (set, frozenset), num_args=1):
         return
     (inner,) = typ.__args__
-    con = list if verb in (P2J, IJ) else typ.__origin__
+    con = list if verb in (P2J, IJ) else get_origin(typ)
     inner = ctx.lookup(verb=verb, typ=inner)
     if verb in JP:
         return partial(convert_collection, inner=inner, con=con)
@@ -284,6 +297,6 @@ def dicts(verb, typ, ctx):
         return
     val_type = ctx.lookup(verb=verb, typ=val_type)
     if verb in JP:
-        return partial(convert_mapping, key=key_type, val=val_type, con=typ.__origin__)
+        return partial(convert_mapping, key=key_type, val=val_type, con=get_origin(typ))
     elif verb in II:
-        return partial(check_mapping, key=key_type, val=val_type, con=typ.__origin__)
+        return partial(check_mapping, key=key_type, val=val_type, con=get_origin(typ))

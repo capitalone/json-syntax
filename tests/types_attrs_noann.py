@@ -10,6 +10,7 @@ class Flat1:
 
 flat_types = [Flat1]
 
+
 class Hooks:
     @classmethod
     def __json_pre_decode__(cls, value):
@@ -32,3 +33,9 @@ class Hook1(Hooks):
 
 
 hook_types = [Hook1]
+Named1 = namedtuple("Named1", ["a", "b"])
+try:
+    Named2 = namedtuple("Named2", ["a", "b"], defaults=["default"])
+except TypeError:
+    Named2 = None
+Named3 = None

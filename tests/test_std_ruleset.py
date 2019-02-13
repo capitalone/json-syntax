@@ -1,36 +1,26 @@
+import pytest
+
 from datetime import date
 from decimal import Decimal
 from enum import Enum
 from typing import Optional, List
 import json_syntax as syn
+
 try:
-    from dataclasses import dataclass
-except ImportError:
-    from attr import dataclass
+    from tests.types_std_ann import things, accounts
+except SyntaxError:
+    from tests.types_std_noann import things, accounts
 
 
-@dataclass
-class CompositeThing:
-    foo: bool
-    bar: List["Other"]
-    qux: Optional[int]
-
-
-@dataclass
-class Other:
-    x: float
-    y: date
-    z: Optional[CompositeThing]
-
-
-def test_encoding_of_composite_thing():
+@pytest.mark.parametrize("Thing,Other", things)
+def test_encoding_of_composite_thing(Thing, Other):
     "Test encoding of a cyclic type."
     rs = syn.std_ruleset()
-    encoder = rs.lookup(typ=CompositeThing, verb=syn.P2J)
-    decoder = rs.lookup(typ=CompositeThing, verb=syn.J2P)
+    encoder = rs.lookup(typ=Thing, verb=syn.P2J)
+    decoder = rs.lookup(typ=Thing, verb=syn.J2P)
 
     def pythonic():
-        return CompositeThing(
+        return Thing(
             foo=False,
             bar=[
                 Other(x=3.3, y=date(1944, 4, 4), z=None),
@@ -53,26 +43,8 @@ def test_encoding_of_composite_thing():
     assert decoder(jsonic()) == pythonic()
 
 
-@dataclass
-class Account:
-    user: str
-    transactions: List["Trans"]
-    balance: Decimal = 0
-
-
-class TransType(Enum):
-    withdraw = 0
-    deposit = 1
-
-
-@dataclass
-class Trans:
-    type: TransType
-    amount: Decimal
-    stamp: date
-
-
-def test_readme_example():
+@pytest.mark.parametrize("Account,TransType,Trans", accounts)
+def test_readme_example(Account, TransType, Trans):
     "Test encoding the readme example."
     rules = syn.std_ruleset()
     encode_account = rules.lookup(typ=Account, verb=syn.P2J)

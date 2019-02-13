@@ -11,10 +11,10 @@ from json_syntax import std_ruleset
 from json_syntax.helpers import P2J, J2P, IP, IJ, NoneType
 
 
-@attr.s(auto_attribs=True, frozen=True)
+@attr.s(frozen=True)
 class Point:
-    x: float
-    y: float = 0.0
+    x = attr.ib(type=float)
+    y = attr.ib(0.0, type=float)
 
 
 class Dir(Enum):
@@ -53,7 +53,7 @@ def test_simple(typ, py, js):
 
 def ambiguous(left, right):
     if left == str and right in {Dir, date, datetime}:
-        return f"str prevents {right} matching"
+        return "str prevents {} matching".format(right)
     if left == date and right == datetime:
         return "supertype date prevents subtype datetime matching"
     if left == datetime and right == date:

@@ -1,4 +1,5 @@
 from warnings import warn
+import threading
 
 
 class UnhashableType(UserWarning):
@@ -18,7 +19,7 @@ class ForwardAction:
         self.__call__ = call
 
     def __repr__(self):
-        return f"<fwd {self.__call__!r}>"
+        return "<fwd {!r}>".format(self.__call__)
 
 
 class SimpleCache:
@@ -37,7 +38,9 @@ class SimpleCache:
             return self.cache.get((verb, typ))
         except TypeError:
             warn(
-                f"Type {typ} is unhashable; json_syntax probably can't handle this",
+                "Type {} is unhashable; json_syntax probably can't handle this".format(
+                    typ
+                ),
                 category=UnhashableType,
             )
             return NotImplemented
@@ -52,7 +55,9 @@ class SimpleCache:
             def unfulfilled(value):
                 # This can't be pickled, which is a good thing.
                 raise TypeError(
-                    f"Forward reference was never fulfilled to {verb} for {typ}"
+                    "Forward reference was never fulfilled to {} for {}".format(
+                        verb, typ
+                    )
                 )
 
             forward = ForwardAction(unfulfilled)

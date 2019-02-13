@@ -34,11 +34,11 @@ def unions(verb, typ, ctx):
             for arg in typ.__args__:
                 check = ctx.lookup(verb=check_verb, typ=arg)
                 convert = ctx.lookup(verb=verb, typ=arg)
-                steps.append((check, convert))
+                steps.append((check, convert, "<{!s}>".format(arg)))
             return partial(convert_union, steps=steps, typename=repr(typ))
         elif verb in II:
             steps = []
             for arg in typ.__args__:
                 check = ctx.lookup(verb=verb, typ=arg)
-                steps.append(check)
+                steps.append((check, "<{!s}>".format(arg)))
             return partial(check_union, steps=steps)

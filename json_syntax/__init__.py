@@ -6,7 +6,6 @@ It's not strictly limited to JSON, but that's the major use case.
 """
 
 from .ruleset import RuleSet
-from .cache import SimpleCache
 from .std import (  # noqa
     atoms,
     decimals,
@@ -14,7 +13,6 @@ from .std import (  # noqa
     floats,
     floats_nan_str,
     iso_dates,
-    iso_dates_loose,
     optional,
     enums,
     faux_enums,

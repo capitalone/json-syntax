@@ -13,12 +13,14 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.4"
+python = "^3.5"
+python-dateutil = {version="^2.7", python = "<3.7"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.1"
 attrs = "^18.2"
 pytest-cov = "^2.6"
+black = {version = "^18.3-alpha.0",allows-prereleases = true,python = ">=3.7"}
 
 [tool.black]
 line-length = 88

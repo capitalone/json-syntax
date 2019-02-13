@@ -1,11 +1,9 @@
 from importlib import import_module
 import logging
+import typing as t
+import sys
 
-try:
-    from typing import _eval_type
-except ImportError:
-    _eval_type = None
-
+_eval_type = getattr(t, "_eval_type", None)
 logger = logging.getLogger(__name__)
 J2P = "json_to_python"
 P2J = "python_to_json"
@@ -16,6 +14,7 @@ JP = (J2P, P2J)
 JPI = (J2P, P2J, IP, IJ)
 NoneType = type(None)
 SENTINEL = object()
+python_minor = sys.version_info[:2]
 
 
 def identity(value):
@@ -29,22 +28,101 @@ def has_origin(typ, origin, num_args=None):
 
     The typing classes use dunder properties such that ``__origin__`` is the generic
     class and ``__args__`` are the type arguments.
+
+    Note: in python3.6, the ``__origin__`` attribute changed to reflect native types.
+    This call attempts to work around that so that python3.5 "just works."
     """
+    t_origin = get_origin(typ)
+    if not isinstance(origin, tuple):
+        origin = (origin,)
+    return t_origin in origin and (num_args is None or len(typ.__args__) == num_args)
+
+
+def get_origin(typ):
     try:
         t_origin = typ.__origin__
     except AttributeError:
-        return False
+        return None
     else:
-        if not isinstance(origin, tuple):
-            origin = (origin,)
-        return t_origin in origin and (
-            num_args is None or len(typ.__args__) == num_args
-        )
+        return _origin_pts(t_origin)
+
+
+try:
+    _Generic = t.GenericMeta
+except AttributeError:
+    _Generic = t._GenericAlias
+
+
+def is_generic(typ):
+    """
+    Return true iff the instance (which should be a type value) is a generic type.
+
+    `typing` module notes:
+
+       3.5: typing.List[int] is an instance of typing._GenericAlias
+       3.6, 3.7: typing.List[int] is an instance of typing.GenericMeta
+    """
+    return isinstance(typ, _Generic)
+
+
+if python_minor < (3, 7):
+    import collections as c
+
+    _map = [
+        (t.Tuple, tuple),
+        (t.List, list),
+        (t.Dict, dict),
+        (t.Callable, callable),
+        (t.Type, type),
+        (t.Set, set),
+        (t.FrozenSet, frozenset),
+    ]
+    seen = {prov for prov, stable in _map}
+    from collections import abc
+
+    for name, generic in vars(t).items():
+        if not is_generic(generic) or generic in seen:
+            continue
+        for check in getattr(abc, name, None), getattr(c, name.lower(), None):
+            if check:
+                _map.append((generic, check))
+                continue
+    _pts = {prov: stable for prov, stable in _map}
+    _stp = {stable: prov for prov, stable in _map}
+
+    def _origin_pts(origin, _pts=_pts):
+        """
+        Convert the __origin__ of a generic type returned by the provisional typing API (python3.5) to the stable version.
+        """
+        return _pts.get(origin, origin)
+
+    def _origin_stp(origin, _stp=_stp):
+        """
+        Convert the __origin__ of a generic type in the stable typing API (python3.6+) to the provisional version.
+        """
+        return _stp.get(origin, origin)
+
+    del _pts
+    del _stp
+    del _map
+    del seen
+    del abc
+    del c
+else:
+    _origin_pts = _origin_stp = identity
 
 
 def issub_safe(sub, sup):
+    """
+    Safe version of issubclass. Tries to be consistent in handling generic types.
+
+    `typing` module notes:
+
+       3.5, 3.6: issubclass(t.List[int], list) returns true
+       3.7: issubclass(t.List[int], list) raises a TypeError
+    """
     try:
-        return issubclass(sub, sup)
+        return not is_generic(sub) and issubclass(sub, sup)
     except TypeError:
         return False
 
@@ -102,6 +180,33 @@ def is_attrs_field_required(field):
         return factory in _missing_values
 
 
+def _add_context(exc, context):
+    try:
+        if exc is None:
+            return
+
+        args = list(exc.args)
+        arg_num, point = getattr(exc, "_context", (None, None))
+
+        if arg_num is None:
+            for arg_num, val in enumerate(args):
+                if isinstance(val, str):
+                    args[arg_num] = args[arg_num] + "; at " if val else "At "
+                    break
+            else:  # This 'else' clause runs if we don't `break`
+                arg_num = len(args)
+                args.append("At ")
+            point = len(args[arg_num])
+
+        arg = args[arg_num]
+        args[arg_num] = arg[:point] + str(context) + arg[point:]
+        exc.args = tuple(args)
+        exc._context = (arg_num, point)
+    except Exception:
+        # Swallow exceptions to avoid adding confusion.
+        pass
+
+
 class ErrorContext:
     """
     Inject contextual information into an exception message. This won't work for some exceptions like OSError that
@@ -133,33 +238,26 @@ class ErrorContext:
     """
 
     def __init__(self, context):
-        self.context = str(context)
+        self.context = context
 
     def __enter__(self):
         pass
 
     def __exit__(self, exc_type, exc_value, traceback):
-        try:
-            if exc_value is None or not self.context:
-                return
+        _add_context(self.context, exc_value)
 
-            args = list(exc_value.args)
-            arg_num, point = getattr(exc_value, "_context", (None, None))
 
-            if arg_num is None:
-                for arg_num, val in enumerate(args):
-                    if isinstance(val, str):
-                        args[arg_num] = args[arg_num] + "; at " if val else "At "
-                        break
-                else:  # This 'else' clause runs if we don't `break`
-                    arg_num = len(args)
-                    args.append("At ")
-                point = len(args[arg_num])
+def err_ctx(context, func):
+    """
+    Execute a callable, decorating exceptions raised with error context.
 
-            arg = args[arg_num]
-            args[arg_num] = arg[:point] + self.context + arg[point:]
-            exc_value.args = tuple(args)
-            exc_value._context = (arg_num, point)
-        except Exception:
-            # Swallow exceptions to avoid adding confusion.
-            pass
+    ``err_ctx(context, func)`` has the same effect as:
+
+    >>> with ErrorContext(context):
+    ...   return func()
+    """
+    try:
+        return func()
+    except Exception as exc:
+        _add_context(context, exc)
+        raise

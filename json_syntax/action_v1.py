@@ -1,12 +1,8 @@
-from .helpers import ErrorContext
+from .helpers import ErrorContext, err_ctx
 
-from datetime import datetime
+from datetime import date, datetime, time
 import math
 from operator import attrgetter
-
-
-def convert_date_loosely(value):
-    return datetime.fromisoformat(value).date()
 
 
 def check_parse_error(value, parser, error):
@@ -20,6 +16,10 @@ def check_parse_error(value, parser, error):
 
 def check_isinst(value, typ):
     return isinstance(value, typ)
+
+
+def check_has_type(value, typ):
+    return type(value) == typ
 
 
 def convert_float(value):
@@ -60,6 +60,20 @@ def convert_str_enum(value, mapping):
     return mapping[value]
 
 
+if hasattr(datetime, "fromisoformat"):
+    convert_date = date.fromisoformat
+    convert_datetime = datetime.fromisoformat
+    convert_time = time.fromisoformat
+else:
+    from dateutil.parser import isoparser
+
+    instance = isoparser(sep="T")
+    convert_date = instance.parse_isodate
+    convert_datetime = instance.isoparse
+    convert_time = instance.parse_isotime
+    del instance
+
+
 def convert_optional(value, inner):
     if value is None:
         return None
@@ -71,28 +85,32 @@ def check_optional(value, inner):
 
 
 def convert_collection(value, inner, con):
-    with ErrorContext("[:]"):
-        return con(map(inner, value))
+    return con(
+        err_ctx("[{}]".format(i), lambda: inner(val)) for i, val in enumerate(value)
+    )
 
 
 def check_collection(value, inner, con):
-    return isinstance(value, con) and all(map(inner, value))
+    return isinstance(value, con) and all(
+        err_ctx("[{}]".format(i), lambda: inner(val)) for i, val in enumerate(value)
+    )
 
 
 def convert_mapping(value, key, val, con):
-    with ErrorContext("[:]"):
-        return con((key(k), val(v)) for k, v in value.items())
+    return con(err_ctx(k, lambda: (key(k), val(v))) for k, v in value.items())
 
 
 def check_mapping(value, key, val, con):
-    return isinstance(value, con) and all(key(k) and val(v) for k, v in value.items())
+    return isinstance(value, con) and all(
+        err_ctx(k, lambda: key(k) and val(v)) for k, v in value.items()
+    )
 
 
 def convert_dict_to_attrs(value, pre_hook, inner_map, con):
     value = pre_hook(value)
     args = {}
     for name, inner in inner_map:
-        with ErrorContext(f"[{name!r}]"):
+        with ErrorContext("[{!r}]".format(name)):
             try:
                 arg = value[name]
             except KeyError:
@@ -107,7 +125,7 @@ def check_dict(value, inner_map, pre_hook):
     if not isinstance(value, dict):
         return False
     for name, inner, required in inner_map:
-        with ErrorContext(f"[{name!r}]"):
+        with ErrorContext("[{!r}]".format(name)):
             try:
                 arg = value[name]
             except KeyError:
@@ -122,7 +140,7 @@ def check_dict(value, inner_map, pre_hook):
 def convert_attrs_to_dict(value, post_hook, inner_map):
     out = {}
     for name, inner, default in inner_map:
-        with ErrorContext(f".{name}"):
+        with ErrorContext("." + name):
             field = getattr(value, name)
             if field == default:
                 continue
@@ -133,24 +151,30 @@ def convert_attrs_to_dict(value, post_hook, inner_map):
 
 
 def convert_tuple_as_list(value, inner, con):
-    with ErrorContext("[:]"):
-        return con(cvt(val) for val, cvt in zip(value, inner))
+    return con(
+        err_ctx("[{}]".format(i), lambda: cvt(val))
+        for i, (val, cvt) in enumerate(zip(value, inner))
+    )
 
 
 def check_tuple_as_list(value, inner, con):
     return (
         isinstance(value, con)
         and len(value) == len(inner)
-        and all(chk(val) for val, chk in zip(value, inner))
+        and all(
+            err_ctx("[{}]".format(i), lambda: chk(val))
+            for i, (val, chk) in enumerate(zip(value, inner))
+        )
     )
 
 
 def check_union(value, steps):
-    return any(step(value) for step in steps)
+    return any(err_ctx(name, lambda: step(value)) for step, name in steps)
 
 
 def convert_union(value, steps, typename):
-    for check, convert in steps:
-        if check(value):
-            return convert(value)
-    raise ValueError(f"Expected value of type {typename} got {value!r}")
+    for check, convert, name in steps:
+        with ErrorContext(name):
+            if check(value):
+                return convert(value)
+    raise ValueError("Expected value of type {} got {!r}".format(typename, value))
