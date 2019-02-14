@@ -307,13 +307,16 @@ You'll want pyenv, then install the pythons:
       PYENV_VERSION=$v python get-pip.py
    done
 
+Once you install `tox` in your preferred python, you should be good to go.
+
 ### Notes
 
 <b id="f1">1</b>: A discriminated union has a tag that identifies the variant, such as
 status codes that indicate success and a payload, or some error. Strictly, all unions
-have to be "discriminated" in some way. In the `unions` rule, the discriminant is the
-class information in Python, and the structure of the JSON data. A less flattering
-description would be that this is a "poorly" discriminated union. [↩](#a1)
+must be discriminated in some way if different code paths are executed. In the
+`unions` rule, the discriminant is the class information in Python, and the structure of
+the JSON data. A less flattering description would be that this is a "poorly"
+discriminated union. [↩](#a1)
 
 [poetry]: https://poetry.eustace.io/docs/#installation
 [gradual typing]: https://www.python.org/dev/peps/pep-0483/#summary-of-gradual-typing
