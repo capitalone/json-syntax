@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "json-syntax"
-version = "0.1.1"
+version = "0.1.2"
 description = "Generates functions to convert Python classes to JSON dumpable objects."
 authors = ["Ben Samuel <bsamuel@unitedincome.com>"]
 license = "MIT"
@@ -13,19 +13,34 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.5"
+python-dateutil = {version="^2.7", python = "<3.7"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.1"
 attrs = "^18.2"
-black = {version = "^18.3-alpha.0",allows-prereleases = true}
 pytest-cov = "^2.6"
-pytest-watch = "^4.2"
+black = {version = "^18.3-alpha.0",allows-prereleases = true,python = ">=3.7"}
 
 [tool.black]
 line-length = 88
 py36 = true
 
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_builds = true
+envlist = py35, py36, py37, py38
+skipsdist = true
+
+[testenv]
+deps =
+    poetry
+commands =
+    python -V
+    poetry install
+    poetry run pytest {posargs}
+"""
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

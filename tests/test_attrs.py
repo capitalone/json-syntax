@@ -6,8 +6,17 @@ from json_syntax.helpers import J2P, P2J, IP, IJ, JPI, JP, II
 
 import attr
 from collections import namedtuple
-from dataclasses import dataclass
+
+try:
+    from dataclasses import dataclass
+except ImportError:
+    dataclass = lambda cls: None
 from typing import NamedTuple, Tuple
+
+try:
+    from tests.types_attrs_ann import flat_types, hook_types, Named1, Named2, Named3
+except SyntaxError:
+    from tests.types_attrs_noann import flat_types, hook_types, Named1, Named2, Named3
 
 
 class Fail:
@@ -26,29 +35,16 @@ class Ctx:
             return lambda val: isinstance(val, typ)
 
 
-@attr.s(auto_attribs=True)
-class Flat1:
-    a: int
-    b: str = "default"
-
-
-@dataclass
-class Flat2:
-    a: int
-    b: str = "default"
-
-
 def test_attrs_classes_disregards():
     "Test that attrs_classes disregards unknown verbs and types."
 
     assert at.attrs_classes(verb=P2J, typ=int, ctx=Fail()) is None
     assert at.attrs_classes(verb=IP, typ=int, ctx=Fail()) is None
     assert at.attrs_classes(verb=J2P, typ=object, ctx=Fail()) is None
-    assert at.attrs_classes(verb="dummy", typ=Flat1, ctx=Fail()) is None
-    assert at.attrs_classes(verb="dummy", typ=Flat2, ctx=Fail()) is None
+    assert at.attrs_classes(verb="dummy", typ=flat_types[0], ctx=Fail()) is None
 
 
-@pytest.mark.parametrize("FlatCls", [Flat1, Flat2])
+@pytest.mark.parametrize("FlatCls", flat_types)
 def test_attrs_encoding(FlatCls):
     "Test that attrs_classes encodes and decodes a flat class."
 
@@ -73,34 +69,7 @@ def test_attrs_encoding(FlatCls):
     assert not inspect({"b": "foo"})
 
 
-class Hooks:
-    @classmethod
-    def __json_pre_decode__(cls, value):
-        if isinstance(value, list):
-            value = {"a": value[0], "b": value[1]}
-        return value
-
-    @classmethod
-    def __json_check__(cls, value):
-        return value.get("_type_") == "Hook"
-
-    def __json_post_encode__(cls, value):
-        return dict(value, _type_="Hook")
-
-
-@attr.s(auto_attribs=True)
-class Hook1(Hooks):
-    a: int
-    b: str = "default"
-
-
-@dataclass
-class Hook2(Hooks):
-    a: int
-    b: str = "default"
-
-
-@pytest.mark.parametrize("HookCls", [Hook1, Hook2])
+@pytest.mark.parametrize("HookCls", hook_types)
 def test_attrs_hooks(HookCls):
     "Test that attrs_classes enables hooks."
 
@@ -140,14 +109,6 @@ class Ctx2:
             return lambda val: isinstance(val, typ)
 
 
-class Named1(NamedTuple):
-    a: int
-    b: str = "default"
-
-
-Named2 = namedtuple("Named2", ["a", "b"], defaults=["default"])
-
-
 def test_named_tuples_disregards():
     "Test that named_tuples disregards unknown verbs and types."
 
@@ -155,31 +116,88 @@ def test_named_tuples_disregards():
     assert at.named_tuples(verb=IP, typ=int, ctx=Fail()) is None
     assert at.named_tuples(verb=J2P, typ=tuple, ctx=Fail()) is None
     assert at.named_tuples(verb="dummy", typ=Named1, ctx=Fail()) is None
-    assert at.named_tuples(verb="dummy", typ=Named2, ctx=Fail()) is None
 
 
-@pytest.mark.parametrize("NamedCls,a", [(Named1, 33), (Named2, "str")])
-def test_named_tuples_encoding(NamedCls, a):
-    "Test that named_tuples encodes and decodes a flat class."
+def test_named_tuples_encoding1():
+    "Test that named_tuples encodes and decodes a namedtuple."
 
-    encoder = at.named_tuples(verb=P2J, typ=NamedCls, ctx=Ctx2())
-    assert encoder(NamedCls(a, "foo")) == {"a": a, "b": "foo"}
-    assert encoder(NamedCls(a, "default")) == {"a": a}
+    encoder = at.named_tuples(verb=P2J, typ=Named1, ctx=Ctx2())
+    assert encoder(Named1(42, "foo")) == {"a": "42", "b": "foo"}
 
-    decoder = at.named_tuples(verb=J2P, typ=NamedCls, ctx=Ctx2())
-    assert decoder({"a": a, "b": "foo"}) == NamedCls(a, "foo")
-    assert decoder({"a": a}) == NamedCls(a)
+    decoder = at.named_tuples(verb=J2P, typ=Named1, ctx=Ctx2())
+    assert decoder({"a": 42, "b": "foo"}) == Named1("42", "foo")
 
-    inspect = at.named_tuples(verb=IP, typ=NamedCls, ctx=Ctx2())
-    assert inspect(NamedCls(a, "foo"))
-    assert inspect(NamedCls("str", "foo"))
-    assert not inspect({"a": a, "b": "foo"})
 
-    inspect = at.named_tuples(verb=IJ, typ=NamedCls, ctx=Ctx2())
-    assert not inspect(NamedCls(a, "foo"))
+@pytest.mark.skipif(Named2 is None, reason="defaults arg to namedtuple unavailable")
+def test_named_tuples_encoding2():
+    "Test that named_tuples encodes and decodes a namedtuple."
+
+    encoder = at.named_tuples(verb=P2J, typ=Named2, ctx=Ctx2())
+    assert encoder(Named2(42, "foo")) == {"a": "42", "b": "foo"}
+    assert encoder(Named2(42)) == {"a": "42"}
+
+    decoder = at.named_tuples(verb=J2P, typ=Named2, ctx=Ctx2())
+    assert decoder({"a": 42, "b": "foo"}) == Named2("42", "foo")
+    assert decoder({"a": 42}) == Named2("42")
+
+
+@pytest.mark.skipif(Named3 is None, reason="annotations unavailable")
+def test_named_tuples_encoding3():
+    "Test that named_tuples encodes and decodes a namedtuple."
+
+    encoder = at.named_tuples(verb=P2J, typ=Named3, ctx=Ctx2())
+    assert encoder(Named3(42, "foo")) == {"a": 42, "b": "foo"}
+    assert encoder(Named3(42)) == {"a": 42}
+
+    decoder = at.named_tuples(verb=J2P, typ=Named3, ctx=Ctx2())
+    assert decoder({"a": 42, "b": "foo"}) == Named3(42, "foo")
+    assert decoder({"a": 42}) == Named3(42)
+
+
+def test_named_tuples_checking1():
+    "Test that named_tuples verifies a namedtuple."
+    inspect = at.named_tuples(verb=IP, typ=Named1, ctx=Ctx2())
+    assert inspect(Named1(42, "foo"))
+    assert inspect(Named1("str", "foo"))
+    assert not inspect({"a": "42", "b": "foo"})
+
+    inspect = at.named_tuples(verb=IJ, typ=Named1, ctx=Ctx2())
+    assert not inspect(Named1(42, "foo"))
+    assert not inspect({"a": "42"})
+    assert not inspect({"a": 42, "b": "foo"})
+    assert inspect({"a": "42", "b": "foo"})
+    assert not inspect({"b": "foo"})
+
+
+@pytest.mark.skipif(Named2 is None, reason="defaults arg to namedtuple unavailable")
+def test_named_tuples_checking2():
+    "Test that named_tuples verifies a namedtuple."
+    inspect = at.named_tuples(verb=IP, typ=Named2, ctx=Ctx2())
+    assert inspect(Named2(42, "foo"))
+    assert inspect(Named2("str", "foo"))
+    assert not inspect({"a": "42", "b": "foo"})
+
+    inspect = at.named_tuples(verb=IJ, typ=Named2, ctx=Ctx2())
+    assert not inspect(Named2(42, "foo"))
     assert not inspect({"a": None, "b": "foo"})
-    assert inspect({"a": a})
-    assert inspect({"a": a, "b": "foo"})
+    assert inspect({"a": "42"})
+    assert inspect({"a": "42", "b": "foo"})
+    assert not inspect({"b": "foo"})
+
+
+@pytest.mark.skipif(Named3 is None, reason="annotations unavailable")
+def test_named_tuples_checking3():
+    "Test that named_tuples verifies a namedtuple."
+    inspect = at.named_tuples(verb=IP, typ=Named3, ctx=Ctx2())
+    assert inspect(Named3(42, "foo"))
+    assert inspect(Named3("str", "foo"))
+    assert not inspect({"a": 42, "b": "foo"})
+
+    inspect = at.named_tuples(verb=IJ, typ=Named3, ctx=Ctx2())
+    assert not inspect(Named3(42, "foo"))
+    assert not inspect({"a": None, "b": "foo"})
+    assert inspect({"a": 42})
+    assert inspect({"a": 42, "b": "foo"})
     assert not inspect({"b": "foo"})
 
 

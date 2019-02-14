@@ -1,4 +1,5 @@
 from warnings import warn
+import threading
 
 
 class UnhashableType(UserWarning):
@@ -18,14 +19,14 @@ class ForwardAction:
         self.__call__ = call
 
     def __repr__(self):
-        return f"<fwd {self.__call__!r}>"
+        return "<fwd {!r}>".format(self.__call__)
 
 
 class SimpleCache:
     def __init__(self):
         self.cache = {}
 
-    def get(self, *, verb, typ):
+    def get(self, verb, typ):
         result = self._lookup(verb, typ)
         return result if result is not NotImplemented else None
 
@@ -37,12 +38,14 @@ class SimpleCache:
             return self.cache.get((verb, typ))
         except TypeError:
             warn(
-                f"Type {typ} is unhashable; json_syntax probably can't handle this",
+                "Type {} is unhashable; json_syntax probably can't handle this".format(
+                    typ
+                ),
                 category=UnhashableType,
             )
             return NotImplemented
 
-    def in_flight(self, *, verb, typ):
+    def in_flight(self, verb, typ):
         """
         Called when we begin determining the action for a type. We construct a forward
         action that will be fulfilled by the ``complete`` call.
@@ -52,14 +55,16 @@ class SimpleCache:
             def unfulfilled(value):
                 # This can't be pickled, which is a good thing.
                 raise TypeError(
-                    f"Forward reference was never fulfilled to {verb} for {typ}"
+                    "Forward reference was never fulfilled to {} for {}".format(
+                        verb, typ
+                    )
                 )
 
             forward = ForwardAction(unfulfilled)
             self.cache[verb, typ] = forward
             return forward
 
-    def de_flight(self, *, verb, typ, forward):
+    def de_flight(self, verb, typ, forward):
         """
         If a lookup fails, this removes the entry so that further attempts can be made.
         """
@@ -67,7 +72,7 @@ class SimpleCache:
         if present is forward:
             del self.cache[verb, typ]
 
-    def complete(self, *, verb, typ, action):
+    def complete(self, verb, typ, action):
         """
         Once a type is complete, we fulfill any ForwardActions and replace the cache
         entry with the actual action.

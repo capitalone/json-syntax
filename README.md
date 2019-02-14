@@ -295,13 +295,28 @@ This package is maintained via the [poetry][] tool. Some useful commands:
  2. Run tests: `poetry run pytest tests/`
  3. Reformat: `poetry run black json_syntax/ tests/`
 
+### Setting up tox
+
+You'll want pyenv, then install the pythons:
+
+   curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+   pyenv install --list | egrep '^ *3\.[4567]|^ *pypy3.5'
+   # figure out what versions you want
+   for v in 3.4.9 3.5.10 ...; do
+      pyenv install $v
+      PYENV_VERSION=$v python get-pip.py
+   done
+
+Once you install `tox` in your preferred python, you should be good to go.
+
 ### Notes
 
 <b id="f1">1</b>: A discriminated union has a tag that identifies the variant, such as
 status codes that indicate success and a payload, or some error. Strictly, all unions
-have to be "discriminated" in some way. In the `unions` rule, the discriminant is the
-class information in Python, and the structure of the JSON data. A less flattering
-description would be that this is a "poorly" discriminated union. [↩](#a1)
+must be discriminated in some way if different code paths are executed. In the
+`unions` rule, the discriminant is the class information in Python, and the structure of
+the JSON data. A less flattering description would be that this is a "poorly"
+discriminated union. [↩](#a1)
 
 [poetry]: https://poetry.eustace.io/docs/#installation
 [gradual typing]: https://www.python.org/dev/peps/pep-0483/#summary-of-gradual-typing

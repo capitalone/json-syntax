@@ -66,14 +66,18 @@ def test_resolve_fwd_ref():
 
     actual = hlp.resolve_fwd_ref(SomeClass.some_type, SomeClass)
 
-    assert actual.__origin__ == list
+    assert hlp.has_origin(actual, list)
     assert actual.__args__ == (AnotherClass,)
 
 
 def test_resolve_fwd_ref_bad_context():
     "Test that resolve_fwd_ref returns the original if the module can't be determined."
 
-    subj = t.ForwardRef("AnotherClass")
+    try:
+        Forward = t.ForwardRef
+    except AttributeError:
+        Forward = t._ForwardRef
+    subj = Forward("AnotherClass")
     actual = hlp.resolve_fwd_ref(subj, "dummy")
 
     assert actual is subj

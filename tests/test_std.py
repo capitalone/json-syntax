@@ -291,7 +291,7 @@ def test_iso_dates():
 
     inspect = std.iso_dates(verb=IP, typ=date, ctx=Fail())
     assert inspect(date(1776, 7, 4))
-    assert inspect(datetime(1776, 7, 4, 3, 3))
+    assert not inspect(datetime(1776, 7, 4, 3, 3))
     assert not inspect("2000-01-01")
     assert not inspect("2000-01-01T03:03:03")
     assert not inspect("string")
@@ -304,42 +304,17 @@ def test_iso_dates():
     assert not inspect("string")
 
 
-def test_iso_dates_loose():
-    "Test the iso_dates_loose rule will generate encoders and decoders for dates using ISO8601, accepting datetimes as input to dates."
-
-    decoder = std.iso_dates_loose(verb=J2P, typ=date, ctx=Fail())
-    assert decoder("1776-07-04") == date(1776, 7, 4)
-    assert decoder("6543-02-01T09:09:09") == date(6543, 2, 1)
-
-    encoder = std.iso_dates_loose(verb=P2J, typ=date, ctx=Fail())
-    assert encoder(date(1776, 7, 4)) == "1776-07-04"
-
-    inspect = std.iso_dates_loose(verb=IP, typ=date, ctx=Fail())
-    assert inspect(date(1776, 7, 4))
-    assert inspect(datetime(1776, 7, 4, 3, 3))
-    assert not inspect("2000-01-01")
-    assert not inspect("2000-01-01T03:03:03")
-    assert not inspect("string")
-
-    inspect = std.iso_dates_loose(verb=IJ, typ=date, ctx=Fail())
-    assert not inspect(date(1776, 7, 4))
-    assert not inspect(datetime(1776, 7, 4, 3, 3))
-    assert inspect("2000-01-01")
-    assert inspect("2000-01-01T03:03:03")
-    assert not inspect("string")
-
-
 def test_iso_datetimes():
     "Test the iso_dates rule will generate encoders and decoders for datetimes using ISO8601."
 
     decoder = std.iso_dates(verb=J2P, typ=datetime, ctx=Fail())
     assert decoder("6666-06-06T12:12:12.987654") == datetime(
-        6666, 6, 6, 12, 12, 12, 987_654
+        6666, 6, 6, 12, 12, 12, 987654
     )
 
     encoder = std.iso_dates(verb=P2J, typ=datetime, ctx=Fail())
     assert (
-        encoder(datetime(6666, 6, 6, 12, 12, 12, 987_654))
+        encoder(datetime(6666, 6, 6, 12, 12, 12, 987654))
         == "6666-06-06T12:12:12.987654"
     )
 
