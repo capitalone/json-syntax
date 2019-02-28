@@ -3,13 +3,10 @@ from .helpers import (
     get_origin,
     issub_safe,
     NoneType,
-    JP,
-    J2P,
-    P2J,
-    IJ,
-    IP,
-    II,
-    JPI,
+    JSON2PY,
+    PY2JSON,
+    INSP_JSON,
+    INSP_PY,
 )
 from .action_v1 import (
     check_collection,
@@ -50,17 +47,17 @@ returns a conversion function for that verb.
 def atoms(verb, typ, ctx):
     "Rule to handle atoms on both sides."
     if issub_safe(typ, (str, int, NoneType)):
-        if verb in JP:
+        if verb in (JSON2PY, PY2JSON):
             if typ is NoneType:
                 return convert_none
             for base in (str, bool, int):
                 if issubclass(typ, base):
                     return base
-        elif verb == IP:
+        elif verb == INSP_PY:
             for base in (NoneType, str, bool, int):
                 if issubclass(typ, base):
                     return partial(check_isinst, typ=base)
-        elif verb == IJ:
+        elif verb == INSP_JSON:
             for base in (NoneType, str, bool, int):
                 if issubclass(typ, base):
                     return partial(check_isinst, typ=base)
@@ -79,11 +76,11 @@ def floats(verb, typ, ctx):
     in ``json.dump()``.
     """
     if issub_safe(typ, float):
-        if verb in JP:
+        if verb in (JSON2PY, PY2JSON):
             return float
-        elif verb == IP:
+        elif verb == INSP_PY:
             return partial(check_isinst, typ=float)
-        elif verb == IJ:
+        elif verb == INSP_JSON:
             return partial(check_isinst, typ=(int, float))
 
 
@@ -96,13 +93,13 @@ def floats_nan_str(verb, typ, ctx):
     This rule converts special constants to string names.
     """
     if issub_safe(typ, float):
-        if verb == J2P:
+        if verb == JSON2PY:
             return float
-        elif verb == P2J:
+        elif verb == PY2JSON:
             return convert_float
-        elif verb == IP:
+        elif verb == INSP_PY:
             return partial(check_isinst, typ=float)
-        elif verb == IJ:
+        elif verb == INSP_JSON:
             return check_float
 
 
@@ -117,9 +114,9 @@ def decimals(verb, typ, ctx):
     This rule will fail if passed a special constant.
     """
     if issub_safe(typ, Decimal):
-        if verb in JP:
+        if verb in (JSON2PY, PY2JSON):
             return Decimal
-        elif verb in II:
+        elif verb in (INSP_JSON, INSP_PY):
             return partial(check_isinst, typ=Decimal)
 
 
@@ -132,13 +129,13 @@ def decimals_as_str(verb, typ, ctx):
     This rule will fail if passed a special constant.
     """
     if issub_safe(typ, Decimal):
-        if verb == J2P:
+        if verb == JSON2PY:
             return Decimal
-        elif verb == P2J:
+        elif verb == PY2JSON:
             return str
-        elif verb == IP:
+        elif verb == INSP_PY:
             return partial(check_isinst, typ=Decimal)
-        elif verb == IJ:
+        elif verb == INSP_JSON:
             return partial(check_parse_error, parser=Decimal, error=ArithmeticError)
 
 
@@ -153,11 +150,11 @@ def iso_dates(verb, typ, ctx):
     """
     if typ not in (date, datetime, time):
         return
-    if verb == P2J:
+    if verb == PY2JSON:
         return typ.isoformat
-    elif verb == IP:
+    elif verb == INSP_PY:
         return partial(check_has_type, typ=typ)
-    elif verb in (J2P, IJ):
+    elif verb in (JSON2PY, INSP_JSON):
         if typ == date:
             parse = convert_date
         elif typ == datetime:
@@ -166,7 +163,7 @@ def iso_dates(verb, typ, ctx):
             parse = convert_time
         else:
             return
-        if verb == J2P:
+        if verb == JSON2PY:
             return parse
         else:
             return partial(
@@ -177,23 +174,23 @@ def iso_dates(verb, typ, ctx):
 def enums(verb, typ, ctx):
     "Rule to convert between enumerated types and strings."
     if issub_safe(typ, Enum):
-        if verb == P2J:
+        if verb == PY2JSON:
             return convert_enum_str
-        elif verb == J2P:
+        elif verb == JSON2PY:
             return partial(convert_str_enum, mapping=dict(typ.__members__))
-        elif verb == IP:
+        elif verb == INSP_PY:
             return partial(check_isinst, typ=typ)
-        elif verb == IJ:
+        elif verb == INSP_JSON:
             return partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
 
 
 def faux_enums(verb, typ, ctx):
     "Rule to fake an Enum by actually using strings."
     if issub_safe(typ, Enum):
-        if verb in JP:
+        if verb in (JSON2PY, PY2JSON):
             mapping = {name: name for name in typ.__members__}
             return partial(convert_str_enum, mapping=mapping)
-        elif verb in II:
+        elif verb in (INSP_JSON, INSP_PY):
             return partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
 
 
@@ -201,7 +198,7 @@ def optional(verb, typ, ctx):
     """
     Handle an ``Optional[inner]`` by passing ``None`` through.
     """
-    if verb not in JPI:
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
         return
     if has_origin(typ, Union, num_args=2):
         if NoneType not in typ.__args__:
@@ -215,9 +212,9 @@ def optional(verb, typ, ctx):
     else:
         return
     inner = ctx.lookup(verb=verb, typ=inner)
-    if verb in JP:
+    if verb in (JSON2PY, PY2JSON):
         return partial(convert_optional, inner=inner)
-    elif verb in II:
+    elif verb in (INSP_JSON, INSP_PY):
         return partial(check_optional, inner=inner)
 
 
@@ -228,7 +225,7 @@ def lists(verb, typ, ctx):
     Trivia: the ellipsis indicates a homogenous tuple; ``Tuple[A, B, C]`` is a product
     type that contains exactly those elements.
     """
-    if verb not in JPI:
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
         return
     if has_origin(typ, list, num_args=1):
         (inner,) = typ.__args__
@@ -239,10 +236,10 @@ def lists(verb, typ, ctx):
     else:
         return
     inner = ctx.lookup(verb=verb, typ=inner)
-    con = list if verb in (P2J, IJ) else get_origin(typ)
-    if verb in JP:
+    con = list if verb in (PY2JSON, INSP_JSON) else get_origin(typ)
+    if verb in (JSON2PY, PY2JSON):
         return partial(convert_collection, inner=inner, con=con)
-    elif verb in II:
+    elif verb in (INSP_JSON, INSP_PY):
         return partial(check_collection, inner=inner, con=con)
 
 
@@ -250,16 +247,16 @@ def sets(verb, typ, ctx):
     """
     Handle a ``Set[type]`` or ``FrozenSet[type]``.
     """
-    if verb not in JPI:
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
         return
     if not has_origin(typ, (set, frozenset), num_args=1):
         return
     (inner,) = typ.__args__
-    con = list if verb in (P2J, IJ) else get_origin(typ)
+    con = list if verb in (PY2JSON, INSP_JSON) else get_origin(typ)
     inner = ctx.lookup(verb=verb, typ=inner)
-    if verb in JP:
+    if verb in (JSON2PY, PY2JSON):
         return partial(convert_collection, inner=inner, con=con)
-    elif verb in II:
+    elif verb in (INSP_JSON, INSP_PY):
         return partial(check_collection, inner=inner, con=con)
 
 
@@ -269,13 +266,13 @@ def _stringly(verb, typ, ctx):
 
     This is used internally by dicts.
     """
-    if verb not in JPI or not issub_safe(typ, (int, str, date, Enum)):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON) or not issub_safe(typ, (int, str, date, Enum)):
         return
     for base in str, int:
         if issubclass(typ, base):
-            if verb in JP:
+            if verb in (JSON2PY, PY2JSON):
                 return base
-            elif verb in II:
+            elif verb in (INSP_JSON, INSP_PY):
                 return partial(check_isinst, typ=base)
     for rule in enums, iso_dates:
         action = rule(verb=verb, typ=typ, ctx=ctx)
@@ -287,7 +284,7 @@ def dicts(verb, typ, ctx):
     """
     Handle a ``Dict[key, value]`` where key is a string, integer or enum type.
     """
-    if verb not in JPI:
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
         return
     if not has_origin(typ, (dict, OrderedDict), num_args=2):
         return
@@ -296,7 +293,7 @@ def dicts(verb, typ, ctx):
     if key_type is None:
         return
     val_type = ctx.lookup(verb=verb, typ=val_type)
-    if verb in JP:
+    if verb in (JSON2PY, PY2JSON):
         return partial(convert_mapping, key=key_type, val=val_type, con=get_origin(typ))
-    elif verb in II:
+    elif verb in (INSP_JSON, INSP_PY):
         return partial(check_mapping, key=key_type, val=val_type, con=get_origin(typ))

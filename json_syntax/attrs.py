@@ -1,9 +1,8 @@
 from .helpers import (
-    IJ,
-    IP,
-    J2P,
-    JPI,
-    P2J,
+    JSON2PY,
+    PY2JSON,
+    INSP_JSON,
+    INSP_PY,
     SENTINEL,
     has_origin,
     identity,
@@ -34,7 +33,7 @@ def attrs_classes(
     """
     Handle an ``@attr.s`` or ``@dataclass`` decorated class.
     """
-    if verb not in JPI:
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
         return
     try:
         fields = typ.__attrs_attrs__
@@ -46,25 +45,25 @@ def attrs_classes(
         else:
             fields = fields.values()
 
-    if verb == IP:
+    if verb == INSP_PY:
         return partial(check_isinst, typ=typ)
 
     inner_map = []
     for field in fields:
-        if field.init or verb == P2J:
+        if field.init or verb == PY2JSON:
             tup = (
                 field.name,
                 ctx.lookup(
                     verb=verb, typ=resolve_fwd_ref(field.type, typ), accept_missing=True
                 ),
             )
-            if verb == P2J:
+            if verb == PY2JSON:
                 tup += (field.default,)
-            elif verb == IJ:
+            elif verb == INSP_JSON:
                 tup += (is_attrs_field_required(field),)
             inner_map.append(tup)
 
-    if verb == J2P:
+    if verb == JSON2PY:
         pre_hook_method = getattr(typ, pre_hook, identity)
         return partial(
             convert_dict_to_attrs,
@@ -72,12 +71,12 @@ def attrs_classes(
             inner_map=tuple(inner_map),
             con=typ,
         )
-    elif verb == P2J:
+    elif verb == PY2JSON:
         post_hook = post_hook if hasattr(typ, post_hook) else None
         return partial(
             convert_attrs_to_dict, post_hook=post_hook, inner_map=tuple(inner_map)
         )
-    elif verb == IJ:
+    elif verb == INSP_JSON:
         check = getattr(typ, check, None)
         if check:
             return check
@@ -91,7 +90,7 @@ def named_tuples(verb, typ, ctx):
 
     Also handles a ``collections.namedtuple`` if you have a fallback handler.
     """
-    if verb not in JPI or not issub_safe(typ, tuple):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON) or not issub_safe(typ, tuple):
         return
     try:
         fields = typ._field_types
@@ -103,7 +102,7 @@ def named_tuples(verb, typ, ctx):
         fields = [(name, None) for name in fields]
     else:
         fields = fields.items()
-    if verb == IP:
+    if verb == INSP_PY:
         return partial(check_isinst, typ=typ)
 
     defaults = {}
@@ -115,24 +114,24 @@ def named_tuples(verb, typ, ctx):
             name,
             ctx.lookup(verb=verb, typ=resolve_fwd_ref(inner, typ), accept_missing=True),
         )
-        if verb == P2J:
+        if verb == PY2JSON:
             tup += (defaults.get(name, SENTINEL),)
-        elif verb == IJ:
+        elif verb == INSP_JSON:
             tup += (name not in defaults,)
         inner_map.append(tup)
 
-    if verb == J2P:
+    if verb == JSON2PY:
         return partial(
             convert_dict_to_attrs,
             pre_hook=identity,
             inner_map=tuple(inner_map),
             con=typ,
         )
-    elif verb == P2J:
+    elif verb == PY2JSON:
         return partial(
             convert_attrs_to_dict, post_hook=None, inner_map=tuple(inner_map)
         )
-    elif verb == IJ:
+    elif verb == INSP_JSON:
         return partial(check_dict, pre_hook=identity, inner_map=tuple(inner_map))
 
 
@@ -141,18 +140,18 @@ def tuples(verb, typ, ctx):
     Handle a ``Tuple[type, type, type]`` product type. Use a ``NamedTuple`` if you don't
     want a list.
     """
-    if verb not in JPI or not has_origin(typ, tuple):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON) or not has_origin(typ, tuple):
         return
     args = typ.__args__
     if Ellipsis in args:
         # This is a homogeneous tuple, use the lists rule.
         return
     inner = [ctx.lookup(verb=verb, typ=arg) for arg in args]
-    if verb == J2P:
+    if verb == JSON2PY:
         return partial(convert_tuple_as_list, inner=inner, con=tuple)
-    elif verb == P2J:
+    elif verb == PY2JSON:
         return partial(convert_tuple_as_list, inner=inner, con=list)
-    elif verb == IP:
+    elif verb == INSP_PY:
         return partial(check_tuple_as_list, inner=inner, con=tuple)
-    elif verb == IJ:
+    elif verb == INSP_JSON:
         return partial(check_tuple_as_list, inner=inner, con=list)

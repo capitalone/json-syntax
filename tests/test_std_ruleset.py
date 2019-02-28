@@ -16,8 +16,8 @@ except SyntaxError:
 def test_encoding_of_composite_thing(Thing, Other):
     "Test encoding of a cyclic type."
     rs = syn.std_ruleset()
-    encoder = rs.lookup(typ=Thing, verb=syn.P2J)
-    decoder = rs.lookup(typ=Thing, verb=syn.J2P)
+    encoder = rs.lookup(typ=Thing, verb=syn.PY2JSON)
+    decoder = rs.lookup(typ=Thing, verb=syn.JSON2PY)
 
     def pythonic():
         return Thing(
@@ -47,8 +47,8 @@ def test_encoding_of_composite_thing(Thing, Other):
 def test_readme_example(Account, TransType, Trans):
     "Test encoding the readme example."
     rules = syn.std_ruleset()
-    encode_account = rules.lookup(typ=Account, verb=syn.P2J)
-    decode_account = rules.lookup(typ=Account, verb=syn.J2P)
+    encode_account = rules.lookup(typ=Account, verb=syn.PY2JSON)
+    decode_account = rules.lookup(typ=Account, verb=syn.JSON2PY)
 
     def pythonic():
         return Account(

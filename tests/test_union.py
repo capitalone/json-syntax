@@ -8,7 +8,7 @@ from itertools import product
 from typing import Union, List, Tuple, Set, FrozenSet, Dict
 
 from json_syntax import std_ruleset
-from json_syntax.helpers import P2J, J2P, IP, IJ, NoneType
+from json_syntax.helpers import PY2JSON, JSON2PY, INSP_PY, INSP_JSON, NoneType
 
 
 @attr.s(frozen=True)
@@ -45,9 +45,9 @@ cases = [
 @pytest.mark.parametrize("typ,py,js", cases)
 def test_simple(typ, py, js):
     rs = std_ruleset()
-    act = rs.lookup(verb=P2J, typ=typ)
+    act = rs.lookup(verb=PY2JSON, typ=typ)
     assert act(py) == js
-    act = rs.lookup(verb=J2P, typ=typ)
+    act = rs.lookup(verb=JSON2PY, typ=typ)
     assert act(js) == py
 
 
@@ -82,10 +82,10 @@ def cvt_map():
             continue
 
         typ = Union[left_type, right_type]
-        yield (P2J, typ, left_python, left_json)
-        yield (P2J, typ, right_python, right_json)
-        yield (J2P, typ, left_json, left_python)
-        yield (J2P, typ, right_json, right_python)
+        yield (PY2JSON, typ, left_python, left_json)
+        yield (PY2JSON, typ, right_python, right_json)
+        yield (JSON2PY, typ, left_json, left_python)
+        yield (JSON2PY, typ, right_json, right_python)
 
 
 @pytest.mark.parametrize("verb,typ,subj,expect", cvt_map())
@@ -112,10 +112,10 @@ def check_map():
             continue
 
         typ = Union[left_type, right_type]
-        yield (IP, typ, left_python)
-        yield (IP, typ, right_python)
-        yield (IJ, typ, left_json)
-        yield (IJ, typ, right_json)
+        yield (INSP_PY, typ, left_python)
+        yield (INSP_PY, typ, right_python)
+        yield (INSP_JSON, typ, left_json)
+        yield (INSP_JSON, typ, right_json)
 
 
 @pytest.mark.parametrize("verb,typ,subj", check_map())
