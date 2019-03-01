@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import Mock
 
 from json_syntax import std
-from json_syntax.helpers import JPI, J2P, P2J, IP, IJ, NoneType
+from json_syntax.helpers import JSON2PY, PY2JSON, INSP_PY, INSP_JSON, NoneType
 
 from datetime import datetime, date
 from decimal import Decimal
@@ -29,24 +29,24 @@ def test_atoms_disregard():
     "Test the atoms rule will disregard unknown types and verbs."
 
     assert std.atoms(verb="unknown", typ=str, ctx=Fail()) is None
-    for verb in JPI:
+    for verb in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
         assert std.atoms(verb=verb, typ=Mystery, ctx=Fail()) is None
 
 
 def test_atoms_str():
     "Test the atoms rule will generate encoders and decoders for strings."
 
-    decoder = std.atoms(verb=J2P, typ=str, ctx=Fail())
+    decoder = std.atoms(verb=JSON2PY, typ=str, ctx=Fail())
     assert decoder("some string") == "some string"
 
-    encoder = std.atoms(verb=P2J, typ=str, ctx=Fail())
+    encoder = std.atoms(verb=PY2JSON, typ=str, ctx=Fail())
     assert encoder("some string") == "some string"
 
-    inspect = std.atoms(verb=IP, typ=str, ctx=Fail())
+    inspect = std.atoms(verb=INSP_PY, typ=str, ctx=Fail())
     assert inspect("string")
     assert not inspect(5)
 
-    inspect = std.atoms(verb=IJ, typ=str, ctx=Fail())
+    inspect = std.atoms(verb=INSP_JSON, typ=str, ctx=Fail())
     assert inspect("string")
     assert not inspect(5)
 
@@ -54,17 +54,17 @@ def test_atoms_str():
 def test_atoms_int():
     "Test the atoms rule will generate encoders and decoders for integers."
 
-    decoder = std.atoms(verb=J2P, typ=int, ctx=Fail())
+    decoder = std.atoms(verb=JSON2PY, typ=int, ctx=Fail())
     assert decoder(77) == 77
 
-    encoder = std.atoms(verb=P2J, typ=int, ctx=Fail())
+    encoder = std.atoms(verb=PY2JSON, typ=int, ctx=Fail())
     assert encoder(77) == 77
 
-    inspect = std.atoms(verb=IP, typ=int, ctx=Fail())
+    inspect = std.atoms(verb=INSP_PY, typ=int, ctx=Fail())
     assert not inspect("string")
     assert inspect(5)
 
-    inspect = std.atoms(verb=IJ, typ=int, ctx=Fail())
+    inspect = std.atoms(verb=INSP_JSON, typ=int, ctx=Fail())
     assert not inspect("string")
     assert inspect(5)
 
@@ -72,19 +72,19 @@ def test_atoms_int():
 def test_atoms_bool():
     "Test the atoms rule will generate encoders and decoders for booleans."
 
-    decoder = std.atoms(verb=J2P, typ=bool, ctx=Fail())
+    decoder = std.atoms(verb=JSON2PY, typ=bool, ctx=Fail())
     assert decoder(False) is False
     assert decoder(True) is True
 
-    encoder = std.atoms(verb=P2J, typ=bool, ctx=Fail())
+    encoder = std.atoms(verb=PY2JSON, typ=bool, ctx=Fail())
     assert encoder(False) is False
     assert encoder(True) is True
 
-    inspect = std.atoms(verb=IP, typ=bool, ctx=Fail())
+    inspect = std.atoms(verb=INSP_PY, typ=bool, ctx=Fail())
     assert not inspect("string")
     assert inspect(True)
 
-    inspect = std.atoms(verb=IJ, typ=bool, ctx=Fail())
+    inspect = std.atoms(verb=INSP_JSON, typ=bool, ctx=Fail())
     assert not inspect("string")
     assert inspect(False)
 
@@ -92,21 +92,21 @@ def test_atoms_bool():
 def test_atoms_null():
     "Test the atoms rule will generate encoders and decoders for None / null."
 
-    decoder = std.atoms(verb=J2P, typ=NoneType, ctx=Fail())
+    decoder = std.atoms(verb=JSON2PY, typ=NoneType, ctx=Fail())
     assert decoder(None) is None
     with pytest.raises(ValueError):
         decoder(5)
 
-    encoder = std.atoms(verb=P2J, typ=NoneType, ctx=Fail())
+    encoder = std.atoms(verb=PY2JSON, typ=NoneType, ctx=Fail())
     assert encoder(None) is None
     with pytest.raises(ValueError):
         encoder(5)
 
-    inspect = std.atoms(verb=IP, typ=NoneType, ctx=Fail())
+    inspect = std.atoms(verb=INSP_PY, typ=NoneType, ctx=Fail())
     assert inspect(None)
     assert not inspect(0)
 
-    inspect = std.atoms(verb=IJ, typ=NoneType, ctx=Fail())
+    inspect = std.atoms(verb=INSP_JSON, typ=NoneType, ctx=Fail())
     assert inspect(None)
     assert not inspect(0)
 
@@ -116,7 +116,7 @@ def test_atoms_picklable():
 
     actions = [
         std.atoms(verb=verb, typ=typ, ctx=Fail())
-        for verb in [J2P, P2J, IP, IJ]
+        for verb in [JSON2PY, PY2JSON, INSP_PY, INSP_JSON]
         for typ in [str, int, bool, NoneType]
     ]
     assert None not in actions
@@ -127,31 +127,31 @@ def test_floats_disregard():
     "Test the floats rule will disregard unknown types and verbs."
 
     assert std.floats(verb="unknown", typ=str, ctx=Fail()) is None
-    for verb in JPI:
+    for verb in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
         assert std.floats(verb=verb, typ=Mystery, ctx=Fail()) is None
 
 
 def test_floats():
     "Test the floats rule will generate encoders and decoders for floats that are tolerant of integers."
 
-    decoder = std.floats(verb=J2P, typ=float, ctx=Fail())
+    decoder = std.floats(verb=JSON2PY, typ=float, ctx=Fail())
     assert decoder(77.7) == 77.7
     assert decoder(77) == 77.0
     assert math.isnan(decoder("nan"))
     assert math.isnan(decoder(float("nan")))
 
-    encoder = std.floats(verb=P2J, typ=float, ctx=Fail())
+    encoder = std.floats(verb=PY2JSON, typ=float, ctx=Fail())
     assert encoder(77.7) == 77.7
     assert encoder(float("inf")) == float("inf")
 
-    inspect = std.floats(verb=IP, typ=float, ctx=Fail())
+    inspect = std.floats(verb=INSP_PY, typ=float, ctx=Fail())
     assert not inspect("string")
     assert not inspect("-inf")
     assert inspect(float("-inf"))
     assert not inspect(44)
     assert inspect(77.7)
 
-    inspect = std.floats(verb=IJ, typ=float, ctx=Fail())
+    inspect = std.floats(verb=INSP_JSON, typ=float, ctx=Fail())
     assert not inspect("string")
     assert not inspect("-inf")
     assert inspect(float("-inf"))
@@ -162,24 +162,24 @@ def test_floats():
 def test_floats_nan_str():
     "Test the floats rule will generate encoders and decoders for floats that are tolerant of integers."
 
-    decoder = std.floats_nan_str(verb=J2P, typ=float, ctx=Fail())
+    decoder = std.floats_nan_str(verb=JSON2PY, typ=float, ctx=Fail())
     assert decoder(77.7) == 77.7
     assert decoder(77) == 77.0
     assert math.isnan(decoder("nan"))
     assert math.isnan(decoder(float("nan")))
 
-    encoder = std.floats_nan_str(verb=P2J, typ=float, ctx=Fail())
+    encoder = std.floats_nan_str(verb=PY2JSON, typ=float, ctx=Fail())
     assert encoder(77.7) == 77.7
     assert encoder(float("inf")) == "Infinity"
 
-    inspect = std.floats_nan_str(verb=IP, typ=float, ctx=Fail())
+    inspect = std.floats_nan_str(verb=INSP_PY, typ=float, ctx=Fail())
     assert not inspect("string")
     assert not inspect("-inf")
     assert inspect(float("-inf"))
     assert not inspect(44)
     assert inspect(77.7)
 
-    inspect = std.floats_nan_str(verb=IJ, typ=float, ctx=Fail())
+    inspect = std.floats_nan_str(verb=INSP_JSON, typ=float, ctx=Fail())
     assert not inspect("string")
     assert not inspect("-inf")
     assert inspect(float("-inf"))
@@ -192,7 +192,7 @@ def test_floats_picklable():
 
     actions = [
         rule(verb=verb, typ=float, ctx=Fail())
-        for verb in [J2P, P2J, IP, IJ]
+        for verb in [JSON2PY, PY2JSON, INSP_PY, INSP_JSON]
         for rule in (std.floats, std.floats_nan_str)
     ]
     assert None not in actions
@@ -203,29 +203,29 @@ def test_decimals_disregard():
     "Test the decimals rule will disregard unknown types and verbs."
 
     assert std.decimals(verb="unknown", typ=date, ctx=Fail()) is None
-    assert std.decimals(verb=J2P, typ=Mystery, ctx=Fail()) is None
-    assert std.decimals(verb=P2J, typ=Mystery, ctx=Fail()) is None
-    assert std.decimals(verb=IJ, typ=Mystery, ctx=Fail()) is None
-    assert std.decimals(verb=IP, typ=Mystery, ctx=Fail()) is None
+    assert std.decimals(verb=JSON2PY, typ=Mystery, ctx=Fail()) is None
+    assert std.decimals(verb=PY2JSON, typ=Mystery, ctx=Fail()) is None
+    assert std.decimals(verb=INSP_JSON, typ=Mystery, ctx=Fail()) is None
+    assert std.decimals(verb=INSP_PY, typ=Mystery, ctx=Fail()) is None
 
 
 def test_decimals():
     "Test the decimals rule will generate encoders and decoders for decimals."
 
-    decoder = std.decimals(verb=J2P, typ=Decimal, ctx=Fail())
+    decoder = std.decimals(verb=JSON2PY, typ=Decimal, ctx=Fail())
     assert decoder(Decimal("77.7")) == Decimal("77.7")
 
-    encoder = std.decimals(verb=P2J, typ=Decimal, ctx=Fail())
+    encoder = std.decimals(verb=PY2JSON, typ=Decimal, ctx=Fail())
     assert encoder(Decimal("77.7")) == Decimal("77.7")
 
-    inspect = std.decimals(verb=IP, typ=Decimal, ctx=Fail())
+    inspect = std.decimals(verb=INSP_PY, typ=Decimal, ctx=Fail())
     assert not inspect("string")
     assert not inspect(44)
     assert not inspect(77.7)
     assert not inspect("77.7")
     assert inspect(Decimal("77.7"))
 
-    inspect = std.decimals(verb=IJ, typ=Decimal, ctx=Fail())
+    inspect = std.decimals(verb=INSP_JSON, typ=Decimal, ctx=Fail())
     assert not inspect("string")
     assert not inspect(44)
     assert not inspect(77.7)
@@ -237,30 +237,30 @@ def test_decimals_as_str_disregard():
     "Test the decimals_as_str rule will disregard unknown types and verbs."
 
     assert std.decimals_as_str(verb="unknown", typ=date, ctx=Fail()) is None
-    assert std.decimals_as_str(verb=J2P, typ=Mystery, ctx=Fail()) is None
-    assert std.decimals_as_str(verb=P2J, typ=Mystery, ctx=Fail()) is None
-    assert std.decimals_as_str(verb=IJ, typ=Mystery, ctx=Fail()) is None
-    assert std.decimals_as_str(verb=IP, typ=Mystery, ctx=Fail()) is None
+    assert std.decimals_as_str(verb=JSON2PY, typ=Mystery, ctx=Fail()) is None
+    assert std.decimals_as_str(verb=PY2JSON, typ=Mystery, ctx=Fail()) is None
+    assert std.decimals_as_str(verb=INSP_JSON, typ=Mystery, ctx=Fail()) is None
+    assert std.decimals_as_str(verb=INSP_PY, typ=Mystery, ctx=Fail()) is None
 
 
 def test_decimals_as_str():
     "Test the decimals_as_str rule will generate encoders and decoders for decimals."
 
-    decoder = std.decimals_as_str(verb=J2P, typ=Decimal, ctx=Fail())
+    decoder = std.decimals_as_str(verb=JSON2PY, typ=Decimal, ctx=Fail())
     assert decoder(Decimal("77.7")) == Decimal("77.7")
     assert decoder("77.7") == Decimal("77.7")
 
-    encoder = std.decimals_as_str(verb=P2J, typ=Decimal, ctx=Fail())
+    encoder = std.decimals_as_str(verb=PY2JSON, typ=Decimal, ctx=Fail())
     assert encoder(Decimal("77.7")) == "77.7"
 
-    inspect = std.decimals_as_str(verb=IP, typ=Decimal, ctx=Fail())
+    inspect = std.decimals_as_str(verb=INSP_PY, typ=Decimal, ctx=Fail())
     assert not inspect("string")
     assert not inspect(44)
     assert not inspect(77.7)
     assert not inspect("77.7")
     assert inspect(Decimal("77.7"))
 
-    inspect = std.decimals_as_str(verb=IJ, typ=Decimal, ctx=Fail())
+    inspect = std.decimals_as_str(verb=INSP_JSON, typ=Decimal, ctx=Fail())
     assert not inspect("string")
     assert inspect(44)
     assert inspect(77.7)
@@ -272,31 +272,31 @@ def test_iso_dates_disregard():
     "Test the iso_dates rule will disregard unknown types and verbs."
 
     assert std.iso_dates(verb="unknown", typ=date, ctx=Fail()) is None
-    assert std.iso_dates(verb=J2P, typ=Mystery, ctx=Fail()) is None
-    assert std.iso_dates(verb=P2J, typ=Mystery, ctx=Fail()) is None
-    assert std.iso_dates(verb=IJ, typ=Mystery, ctx=Fail()) is None
-    assert std.iso_dates(verb=IP, typ=Mystery, ctx=Fail()) is None
+    assert std.iso_dates(verb=JSON2PY, typ=Mystery, ctx=Fail()) is None
+    assert std.iso_dates(verb=PY2JSON, typ=Mystery, ctx=Fail()) is None
+    assert std.iso_dates(verb=INSP_JSON, typ=Mystery, ctx=Fail()) is None
+    assert std.iso_dates(verb=INSP_PY, typ=Mystery, ctx=Fail()) is None
 
 
 def test_iso_dates():
     "Test the iso_dates rule will generate encoders and decoders for dates using ISO8601, rejecting datetimes as input to dates."
 
-    decoder = std.iso_dates(verb=J2P, typ=date, ctx=Fail())
+    decoder = std.iso_dates(verb=JSON2PY, typ=date, ctx=Fail())
     assert decoder("1776-07-04") == date(1776, 7, 4)
     with pytest.raises(ValueError):
         decoder("6543-02-01T09:09:09")
 
-    encoder = std.iso_dates(verb=P2J, typ=date, ctx=Fail())
+    encoder = std.iso_dates(verb=PY2JSON, typ=date, ctx=Fail())
     assert encoder(date(1776, 7, 4)) == "1776-07-04"
 
-    inspect = std.iso_dates(verb=IP, typ=date, ctx=Fail())
+    inspect = std.iso_dates(verb=INSP_PY, typ=date, ctx=Fail())
     assert inspect(date(1776, 7, 4))
     assert not inspect(datetime(1776, 7, 4, 3, 3))
     assert not inspect("2000-01-01")
     assert not inspect("2000-01-01T03:03:03")
     assert not inspect("string")
 
-    inspect = std.iso_dates(verb=IJ, typ=date, ctx=Fail())
+    inspect = std.iso_dates(verb=INSP_JSON, typ=date, ctx=Fail())
     assert not inspect(date(1776, 7, 4))
     assert not inspect(datetime(1776, 7, 4, 3, 3))
     assert inspect("2000-01-01")
@@ -307,25 +307,25 @@ def test_iso_dates():
 def test_iso_datetimes():
     "Test the iso_dates rule will generate encoders and decoders for datetimes using ISO8601."
 
-    decoder = std.iso_dates(verb=J2P, typ=datetime, ctx=Fail())
+    decoder = std.iso_dates(verb=JSON2PY, typ=datetime, ctx=Fail())
     assert decoder("6666-06-06T12:12:12.987654") == datetime(
         6666, 6, 6, 12, 12, 12, 987654
     )
 
-    encoder = std.iso_dates(verb=P2J, typ=datetime, ctx=Fail())
+    encoder = std.iso_dates(verb=PY2JSON, typ=datetime, ctx=Fail())
     assert (
         encoder(datetime(6666, 6, 6, 12, 12, 12, 987654))
         == "6666-06-06T12:12:12.987654"
     )
 
-    inspect = std.iso_dates(verb=IP, typ=datetime, ctx=Fail())
+    inspect = std.iso_dates(verb=INSP_PY, typ=datetime, ctx=Fail())
     assert not inspect(date(1776, 7, 4))
     assert inspect(datetime(1776, 7, 4, 3, 3))
     assert not inspect("2000-01-01")
     assert not inspect("2000-01-01T03:03:03")
     assert not inspect("string")
 
-    inspect = std.iso_dates(verb=IJ, typ=datetime, ctx=Fail())
+    inspect = std.iso_dates(verb=INSP_JSON, typ=datetime, ctx=Fail())
     assert not inspect(date(1776, 7, 4))
     assert not inspect(datetime(1776, 7, 4, 3, 3))
     assert inspect("2000-01-01")
@@ -338,7 +338,7 @@ def test_iso_dates_picklable():
 
     actions = [
         std.iso_dates(verb=verb, typ=typ, ctx=Fail())
-        for verb in [J2P, P2J]
+        for verb in [JSON2PY, PY2JSON]
         for typ in [date, datetime]
     ]
     assert None not in actions
@@ -361,27 +361,27 @@ def test_enums_disregard():
     "Test the iso_dates rule will disregard unknown types and verbs."
 
     assert std.enums(verb="unknown", typ=Enum1, ctx=Fail()) is None
-    assert std.enums(verb=J2P, typ=Mystery, ctx=Fail()) is None
-    assert std.enums(verb=P2J, typ=Mystery, ctx=Fail()) is None
+    assert std.enums(verb=JSON2PY, typ=Mystery, ctx=Fail()) is None
+    assert std.enums(verb=PY2JSON, typ=Mystery, ctx=Fail()) is None
 
 
 def test_enums():
     "Test the enums rule will generate encoders and decoders for enumerated types."
 
-    decoder = std.enums(verb=J2P, typ=Enum1, ctx=Fail())
+    decoder = std.enums(verb=JSON2PY, typ=Enum1, ctx=Fail())
     assert decoder("ABLE") == Enum1.ABLE
     assert decoder("CHARLIE") == Enum1.CHARLIE
 
-    encoder = std.enums(verb=P2J, typ=Enum1, ctx=Fail())
+    encoder = std.enums(verb=PY2JSON, typ=Enum1, ctx=Fail())
     assert encoder(Enum1.BAKER) == "BAKER"
     assert encoder(Enum1.CHARLIE) == "CHARLIE"
 
-    inspect = std.enums(verb=IP, typ=Enum1, ctx=Fail())
+    inspect = std.enums(verb=INSP_PY, typ=Enum1, ctx=Fail())
     assert not inspect("ABLE")
     assert inspect(Enum1.CHARLIE)
     assert not inspect(Enum2.BETA)
 
-    inspect = std.enums(verb=IJ, typ=Enum1, ctx=Fail())
+    inspect = std.enums(verb=INSP_JSON, typ=Enum1, ctx=Fail())
     assert not inspect(Enum1.BAKER)
     assert not inspect("BETA")
     assert inspect("CHARLIE")
@@ -389,20 +389,20 @@ def test_enums():
 
 def test_enums_int():
     "Test the enums rule will generate encoders and decoders for enumerated type subclasses."
-    decoder = std.enums(verb=J2P, typ=Enum2, ctx=Fail())
+    decoder = std.enums(verb=JSON2PY, typ=Enum2, ctx=Fail())
     assert decoder("ALPHA") == Enum2.ALPHA
     assert decoder("GAMMA") == Enum2.GAMMA
 
-    encoder = std.enums(verb=P2J, typ=Enum2, ctx=Fail())
+    encoder = std.enums(verb=PY2JSON, typ=Enum2, ctx=Fail())
     assert encoder(Enum2.BETA) == "BETA"
     assert encoder(Enum2.GAMMA) == "GAMMA"
 
-    inspect = std.enums(verb=IP, typ=Enum2, ctx=Fail())
+    inspect = std.enums(verb=INSP_PY, typ=Enum2, ctx=Fail())
     assert not inspect("ALPA")
     assert not inspect(Enum1.CHARLIE)
     assert inspect(Enum2.BETA)
 
-    inspect = std.enums(verb=IJ, typ=Enum2, ctx=Fail())
+    inspect = std.enums(verb=INSP_JSON, typ=Enum2, ctx=Fail())
     assert not inspect(Enum2.GAMMA)
     assert inspect("BETA")
     assert not inspect("ABLE")
@@ -413,7 +413,7 @@ def test_enums_picklable():
 
     actions = [
         std.enums(verb=verb, typ=typ, ctx=Fail())
-        for verb in [J2P, P2J, IP, IJ]
+        for verb in [JSON2PY, PY2JSON, INSP_PY, INSP_JSON]
         for typ in [Enum1, Enum2]
     ]
     assert None not in actions
@@ -424,29 +424,29 @@ def test_faux_enums_disregard():
     "Test the iso_dates rule will disregard unknown types and verbs."
 
     assert std.faux_enums(verb="unknown", typ=Enum1, ctx=Fail()) is None
-    assert std.faux_enums(verb=J2P, typ=Mystery, ctx=Fail()) is None
-    assert std.faux_enums(verb=P2J, typ=Mystery, ctx=Fail()) is None
+    assert std.faux_enums(verb=JSON2PY, typ=Mystery, ctx=Fail()) is None
+    assert std.faux_enums(verb=PY2JSON, typ=Mystery, ctx=Fail()) is None
 
 
 def test_faux_enums():
     "Test the enums rule will generate encoders and decoders for enumerated types."
 
-    decoder = std.faux_enums(verb=J2P, typ=Enum1, ctx=Fail())
+    decoder = std.faux_enums(verb=JSON2PY, typ=Enum1, ctx=Fail())
     assert decoder("ABLE") == "ABLE"
     with pytest.raises(KeyError):
         decoder("OTHER")
 
-    encoder = std.faux_enums(verb=P2J, typ=Enum1, ctx=Fail())
+    encoder = std.faux_enums(verb=PY2JSON, typ=Enum1, ctx=Fail())
     assert encoder("BAKER") == "BAKER"
     with pytest.raises(KeyError):
         encoder("OTHER")
 
-    inspect = std.faux_enums(verb=IP, typ=Enum1, ctx=Fail())
+    inspect = std.faux_enums(verb=INSP_PY, typ=Enum1, ctx=Fail())
     assert inspect("ABLE")
     assert not inspect(Enum1.CHARLIE)
     assert not inspect(Enum2.BETA)
 
-    inspect = std.faux_enums(verb=IJ, typ=Enum1, ctx=Fail())
+    inspect = std.faux_enums(verb=INSP_JSON, typ=Enum1, ctx=Fail())
     assert not inspect(Enum1.BAKER)
     assert not inspect("BETA")
     assert inspect("CHARLIE")
@@ -457,7 +457,7 @@ def test_faux_enums_picklable():
 
     actions = [
         std.faux_enums(verb=verb, typ=typ, ctx=Fail())
-        for verb in [J2P, P2J, IP, IJ]
+        for verb in [JSON2PY, PY2JSON, INSP_PY, INSP_JSON]
         for typ in [Enum1, Enum2]
     ]
     assert None not in actions
@@ -468,10 +468,10 @@ def test_optional_disregard():
     "Test that optional will disregard unknown types and verbs."
 
     assert std.optional(verb="unknown", typ=Optional[int], ctx=Fail()) is None
-    assert std.optional(verb=J2P, typ=Union[int, str], ctx=Fail()) is None
-    assert std.optional(verb=J2P, typ=Union[int, str, NoneType], ctx=Fail()) is None
-    assert std.optional(verb=J2P, typ=Mystery, ctx=Fail()) is None
-    assert std.optional(verb=P2J, typ=Mystery, ctx=Fail()) is None
+    assert std.optional(verb=JSON2PY, typ=Union[int, str], ctx=Fail()) is None
+    assert std.optional(verb=JSON2PY, typ=Union[int, str, NoneType], ctx=Fail()) is None
+    assert std.optional(verb=JSON2PY, typ=Mystery, ctx=Fail()) is None
+    assert std.optional(verb=PY2JSON, typ=Mystery, ctx=Fail()) is None
 
 
 def test_optional():
@@ -479,22 +479,22 @@ def test_optional():
 
     ctx = Mock(lookup=Mock(return_value=int))
 
-    encoder = std.optional(verb=P2J, typ=Optional[int], ctx=ctx)
+    encoder = std.optional(verb=PY2JSON, typ=Optional[int], ctx=ctx)
     assert encoder("77") == 77
     assert encoder(None) is None
 
-    decoder = std.optional(verb=J2P, typ=Optional[int], ctx=ctx)
+    decoder = std.optional(verb=JSON2PY, typ=Optional[int], ctx=ctx)
     assert decoder("77") == 77
     assert decoder(None) is None
 
     ctx = Mock(lookup=Mock(return_value=lambda val: isinstance(val, int)))
 
-    inspect = std.optional(verb=IP, typ=Optional[int], ctx=ctx)
+    inspect = std.optional(verb=INSP_PY, typ=Optional[int], ctx=ctx)
     assert inspect(77)
     assert inspect(None)
     assert not inspect("77")
 
-    inspect = std.optional(verb=IJ, typ=Optional[int], ctx=ctx)
+    inspect = std.optional(verb=INSP_JSON, typ=Optional[int], ctx=ctx)
     assert inspect(77)
     assert inspect(None)
     assert not inspect("77")
@@ -505,11 +505,11 @@ def test_optional_nonstandard():
 
     ctx = Mock(lookup=Mock(return_value=str))
 
-    encoder = std.optional(verb=P2J, typ=Union[str, NoneType], ctx=ctx)
+    encoder = std.optional(verb=PY2JSON, typ=Union[str, NoneType], ctx=ctx)
     assert encoder(77) == "77"
     assert encoder(None) is None
 
-    decoder = std.optional(verb=J2P, typ=Union[str, NoneType], ctx=ctx)
+    decoder = std.optional(verb=JSON2PY, typ=Union[str, NoneType], ctx=ctx)
     assert decoder(77) == "77"
     assert decoder(None) is None
 
@@ -520,7 +520,7 @@ def test_optional_invalid():
     ctx = Mock(lookup=Mock(return_value=str))
     fake_type = Mock(__origin__=Union, __args__=(NoneType, NoneType))
 
-    for verb in JPI:
+    for verb in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
         with pytest.raises(TypeError):
             std.optional(verb=verb, typ=fake_type, ctx=ctx)
 
@@ -532,7 +532,7 @@ def test_optional_picklable():
 
     actions = [
         std.optional(verb=verb, typ=typ, ctx=ctx)
-        for verb in [J2P, P2J]
+        for verb in [JSON2PY, PY2JSON]
         for typ in [Optional[str], Optional[float], Optional[int], Optional[bool]]
     ]
     assert None not in actions
@@ -544,10 +544,10 @@ def test_lists_disregards():
 
     assert std.lists(verb="unknown", typ=List[int], ctx=Fail()) is None
     assert std.lists(verb="unknown", typ=Tuple[int, ...], ctx=Fail()) is None
-    assert std.lists(verb=P2J, typ=bool, ctx=Fail()) is None
-    assert std.lists(verb=J2P, typ=Tuple[int, str], ctx=Fail()) is None
-    assert std.lists(verb=IP, typ=bool, ctx=Fail()) is None
-    assert std.lists(verb=IJ, typ=Tuple[int, str], ctx=Fail()) is None
+    assert std.lists(verb=PY2JSON, typ=bool, ctx=Fail()) is None
+    assert std.lists(verb=JSON2PY, typ=Tuple[int, str], ctx=Fail()) is None
+    assert std.lists(verb=INSP_PY, typ=bool, ctx=Fail()) is None
+    assert std.lists(verb=INSP_JSON, typ=Tuple[int, str], ctx=Fail()) is None
 
 
 def test_lists_lists():
@@ -555,20 +555,20 @@ def test_lists_lists():
 
     ctx = Mock(lookup=Mock(return_value=str))
 
-    encoder = std.lists(verb=P2J, typ=List[str], ctx=ctx)
+    encoder = std.lists(verb=PY2JSON, typ=List[str], ctx=ctx)
     assert encoder([33, 77]) == ["33", "77"]
 
-    decoder = std.lists(verb=J2P, typ=List[str], ctx=ctx)
+    decoder = std.lists(verb=JSON2PY, typ=List[str], ctx=ctx)
     assert decoder([33, 77]) == ["33", "77"]
 
     ctx = Mock(lookup=Mock(return_value=lambda val: isinstance(val, str)))
 
-    inspect = std.lists(verb=IP, typ=List[str], ctx=ctx)
+    inspect = std.lists(verb=INSP_PY, typ=List[str], ctx=ctx)
     assert not inspect(["33", 77])
     assert inspect(["33", "77"])
     assert not inspect(("33", "77"))
 
-    inspect = std.lists(verb=IJ, typ=List[str], ctx=ctx)
+    inspect = std.lists(verb=INSP_JSON, typ=List[str], ctx=ctx)
     assert not inspect(["33", 77])
     assert inspect(["33", "77"])
     assert not inspect(("33", "77"))
@@ -579,20 +579,20 @@ def test_lists_tuples():
 
     ctx = Mock(lookup=Mock(return_value=str))
 
-    encoder = std.lists(verb=P2J, typ=Tuple[str, ...], ctx=ctx)
+    encoder = std.lists(verb=PY2JSON, typ=Tuple[str, ...], ctx=ctx)
     assert encoder((33, 77)) == ["33", "77"]
 
-    decoder = std.lists(verb=J2P, typ=Tuple[str, ...], ctx=ctx)
+    decoder = std.lists(verb=JSON2PY, typ=Tuple[str, ...], ctx=ctx)
     assert decoder([33, 77]) == ("33", "77")
 
     ctx = Mock(lookup=Mock(return_value=lambda val: isinstance(val, str)))
 
-    inspect = std.lists(verb=IP, typ=Tuple[str, ...], ctx=ctx)
+    inspect = std.lists(verb=INSP_PY, typ=Tuple[str, ...], ctx=ctx)
     assert not inspect(("33", 77))
     assert inspect(("33", "77"))
     assert not inspect(["33", "77"])
 
-    inspect = std.lists(verb=IJ, typ=Tuple[str, ...], ctx=ctx)
+    inspect = std.lists(verb=INSP_JSON, typ=Tuple[str, ...], ctx=ctx)
     assert not inspect(["33", 77])
     assert inspect(["33", "77"])
     assert not inspect(("33", "77"))
@@ -606,10 +606,10 @@ def test_sets_disregards():
 
     assert std.sets(verb="unknown", typ=Set[int], ctx=Fail()) is None
     assert std.sets(verb="unknown", typ=FrozenSet[set], ctx=Fail()) is None
-    assert std.sets(verb=P2J, typ=bool, ctx=Fail()) is None
-    assert std.sets(verb=J2P, typ=List[str], ctx=Fail()) is None
-    assert std.sets(verb=IP, typ=bool, ctx=Fail()) is None
-    assert std.sets(verb=IJ, typ=List[str], ctx=Fail()) is None
+    assert std.sets(verb=PY2JSON, typ=bool, ctx=Fail()) is None
+    assert std.sets(verb=JSON2PY, typ=List[str], ctx=Fail()) is None
+    assert std.sets(verb=INSP_PY, typ=bool, ctx=Fail()) is None
+    assert std.sets(verb=INSP_JSON, typ=List[str], ctx=Fail()) is None
 
 
 def test_sets_sets():
@@ -617,22 +617,22 @@ def test_sets_sets():
 
     ctx = Mock(lookup=Mock(return_value=str))
 
-    encoder = std.sets(verb=P2J, typ=Set[str], ctx=ctx)
+    encoder = std.sets(verb=PY2JSON, typ=Set[str], ctx=ctx)
     actual = encoder({1, 2, 2, 3})
     actual.sort()
     assert actual == ["1", "2", "3"]
 
-    decoder = std.sets(verb=J2P, typ=Set[str], ctx=ctx)
+    decoder = std.sets(verb=JSON2PY, typ=Set[str], ctx=ctx)
     assert decoder([1, 2, 2, 3]) == {"1", "2", "3"}
 
     ctx = Mock(lookup=Mock(return_value=lambda val: isinstance(val, str)))
 
-    inspect = std.sets(verb=IP, typ=Set[str], ctx=ctx)
+    inspect = std.sets(verb=INSP_PY, typ=Set[str], ctx=ctx)
     assert not inspect({"33", 77})
     assert inspect({"33", "77"})
     assert not inspect(["33", "77"])
 
-    inspect = std.sets(verb=IJ, typ=Set[str], ctx=ctx)
+    inspect = std.sets(verb=INSP_JSON, typ=Set[str], ctx=ctx)
     assert not inspect(["33", 77])
     assert inspect(["33", "77"])
     assert not inspect({"33", "77"})
@@ -643,22 +643,22 @@ def test_sets_frozen():
 
     ctx = Mock(lookup=Mock(return_value=str))
 
-    encoder = std.sets(verb=P2J, typ=FrozenSet[str], ctx=ctx)
+    encoder = std.sets(verb=PY2JSON, typ=FrozenSet[str], ctx=ctx)
     actual = encoder(frozenset([1, 2, 2, 3]))
     actual.sort()
     assert actual == ["1", "2", "3"]
 
-    decoder = std.sets(verb=J2P, typ=FrozenSet[str], ctx=ctx)
+    decoder = std.sets(verb=JSON2PY, typ=FrozenSet[str], ctx=ctx)
     assert decoder([1, 2, 2, 3]) == frozenset(["1", "2", "3"])
 
     ctx = Mock(lookup=Mock(return_value=lambda val: isinstance(val, str)))
 
-    inspect = std.sets(verb=IP, typ=FrozenSet[str], ctx=ctx)
+    inspect = std.sets(verb=INSP_PY, typ=FrozenSet[str], ctx=ctx)
     assert not inspect(frozenset({"33", 77}))
     assert inspect(frozenset({"33", "77"}))
     assert not inspect(["33", "77"])
 
-    inspect = std.sets(verb=IJ, typ=FrozenSet[str], ctx=ctx)
+    inspect = std.sets(verb=INSP_JSON, typ=FrozenSet[str], ctx=ctx)
     assert not inspect(["33", 77])
     assert inspect(["33", "77"])
     assert not inspect({"33", "77"})
@@ -674,10 +674,10 @@ def test_dicts_disregards():
         assert (
             std.dicts(verb="unknown", typ=OrderedDict[date, float], ctx=Fail()) is None
         )
-    assert std.dicts(verb=P2J, typ=bool, ctx=Fail()) is None
-    assert std.dicts(verb=J2P, typ=Dict[float, str], ctx=Fail()) is None
-    assert std.dicts(verb=IP, typ=Dict[float, str], ctx=Fail()) is None
-    assert std.dicts(verb=IJ, typ=List[str], ctx=Fail()) is None
+    assert std.dicts(verb=PY2JSON, typ=bool, ctx=Fail()) is None
+    assert std.dicts(verb=JSON2PY, typ=Dict[float, str], ctx=Fail()) is None
+    assert std.dicts(verb=INSP_PY, typ=Dict[float, str], ctx=Fail()) is None
+    assert std.dicts(verb=INSP_JSON, typ=List[str], ctx=Fail()) is None
 
 
 def test_dicts_string_key():
@@ -685,22 +685,22 @@ def test_dicts_string_key():
 
     ctx = Mock(lookup=Mock(side_effect=lambda verb, typ: typ))
 
-    encoder = std.dicts(verb=P2J, typ=Dict[str, int], ctx=ctx)
+    encoder = std.dicts(verb=PY2JSON, typ=Dict[str, int], ctx=ctx)
     assert encoder({22: "11", 44: "33"}) == {"22": 11, "44": 33}
 
-    decoder = std.dicts(verb=J2P, typ=Dict[str, int], ctx=ctx)
+    decoder = std.dicts(verb=JSON2PY, typ=Dict[str, int], ctx=ctx)
     assert decoder({22: "11", 44: "33"}) == {"22": 11, "44": 33}
 
     ctx = Mock(
         lookup=Mock(side_effect=lambda verb, typ: lambda val: isinstance(val, typ))
     )
 
-    inspect = std.dicts(verb=IP, typ=Dict[str, int], ctx=ctx)
+    inspect = std.dicts(verb=INSP_PY, typ=Dict[str, int], ctx=ctx)
     assert not inspect({"foo": 1, "bar": "no"})
     assert inspect({"foo": 1, "bar": 2})
     assert inspect({})
 
-    inspect = std.dicts(verb=IJ, typ=Dict[str, int], ctx=ctx)
+    inspect = std.dicts(verb=INSP_JSON, typ=Dict[str, int], ctx=ctx)
     assert not inspect({"foo": 1, "bar": "no"})
     assert inspect({"foo": 1, "bar": 2})
     assert inspect({})
@@ -716,22 +716,22 @@ def test_dicts_enum_key():
 
     ctx = Mock(lookup=Mock(side_effect=lambda verb, typ: typ))
 
-    encoder = std.dicts(verb=P2J, typ=Dict[AB, int], ctx=ctx)
+    encoder = std.dicts(verb=PY2JSON, typ=Dict[AB, int], ctx=ctx)
     assert encoder({AB.A: "11", AB.B: "33"}) == {"A": 11, "B": 33}
 
-    decoder = std.dicts(verb=J2P, typ=Dict[AB, int], ctx=ctx)
+    decoder = std.dicts(verb=JSON2PY, typ=Dict[AB, int], ctx=ctx)
     assert decoder({"A": "11", "B": "33"}) == {AB.A: 11, AB.B: 33}
 
     ctx = Mock(
         lookup=Mock(side_effect=lambda verb, typ: lambda val: isinstance(val, typ))
     )
 
-    inspect = std.dicts(verb=IP, typ=Dict[AB, int], ctx=ctx)
+    inspect = std.dicts(verb=INSP_PY, typ=Dict[AB, int], ctx=ctx)
     assert not inspect({AB.A: 1, AB.B: "no"})
     assert inspect({AB.A: 1, AB.B: 2})
     assert not inspect({AB.A: 1, "B": 2})
 
-    inspect = std.dicts(verb=IJ, typ=Dict[AB, int], ctx=ctx)
+    inspect = std.dicts(verb=INSP_JSON, typ=Dict[AB, int], ctx=ctx)
     assert not inspect({"A": 1, "B": "no"})
     assert inspect({"A": 1, "B": 2})
     assert not inspect({"A": 1, "C": 2})

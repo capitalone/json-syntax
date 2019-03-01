@@ -1,4 +1,4 @@
-from json_syntax.helpers import J2P, P2J, IJ, IP
+from json_syntax.helpers import JSON2PY, PY2JSON, INSP_JSON, INSP_PY
 from json_syntax.action_v1 import check_parse_error, check_has_type
 
 from datetime import date, datetime
@@ -21,13 +21,13 @@ def convert_date_loosely(value):
 
 def iso_dates_loose(verb, typ, ctx):
     if typ == date:
-        if verb == P2J:
+        if verb == PY2JSON:
             return date.isoformat
-        elif verb == J2P:
+        elif verb == JSON2PY:
             return convert_date_loosely
-        elif verb == IP:
+        elif verb == INSP_PY:
             return partial(check_has_type, typ=date)
-        elif verb == IJ:
+        elif verb == INSP_JSON:
             return partial(
                 check_parse_error,
                 parser=convert_date_loosely,

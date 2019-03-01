@@ -5,13 +5,10 @@ import sys
 
 _eval_type = getattr(t, "_eval_type", None)
 logger = logging.getLogger(__name__)
-J2P = "json_to_python"
-P2J = "python_to_json"
-IJ = "inspect_json"
-IP = "inspect_python"
-II = (IJ, IP)
-JP = (J2P, P2J)
-JPI = (J2P, P2J, IP, IJ)
+JSON2PY = "json_to_python"
+PY2JSON = "python_to_json"
+INSP_JSON = "inspect_json"
+INSP_PY = "inspect_python"
 NoneType = type(None)
 SENTINEL = object()
 python_minor = sys.version_info[:2]
@@ -180,7 +177,7 @@ def is_attrs_field_required(field):
         return factory in _missing_values
 
 
-def _add_context(exc, context):
+def _add_context(context, exc):
     try:
         if exc is None:
             return

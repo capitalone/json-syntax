@@ -1,4 +1,4 @@
-from .helpers import has_origin, JP, J2P, P2J, IJ, IP, II
+from .helpers import has_origin, JSON2PY, PY2JSON, INSP_JSON, INSP_PY
 from .action_v1 import convert_union, check_union
 
 from functools import partial
@@ -23,11 +23,11 @@ def unions(verb, typ, ctx):
     efficiently, so it should be before this.
     """
     if has_origin(typ, Union):
-        if verb in JP:
-            if verb == P2J:
-                check_verb = IP
-            elif verb == J2P:
-                check_verb = IJ
+        if verb in (JSON2PY, PY2JSON):
+            if verb == PY2JSON:
+                check_verb = INSP_PY
+            elif verb == JSON2PY:
+                check_verb = INSP_JSON
             else:
                 return
             steps = []
@@ -36,7 +36,7 @@ def unions(verb, typ, ctx):
                 convert = ctx.lookup(verb=verb, typ=arg)
                 steps.append((check, convert, "<{!s}>".format(arg)))
             return partial(convert_union, steps=steps, typename=repr(typ))
-        elif verb in II:
+        elif verb in (INSP_JSON, INSP_PY):
             steps = []
             for arg in typ.__args__:
                 check = ctx.lookup(verb=verb, typ=arg)
