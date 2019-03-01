@@ -175,7 +175,7 @@ def enums(verb, typ, ctx):
     "Rule to convert between enumerated types and strings."
     if issub_safe(typ, Enum):
         if verb == PY2JSON:
-            return convert_enum_str
+            return partial(convert_enum_str, typ=typ)
         elif verb == JSON2PY:
             return partial(convert_str_enum, mapping=dict(typ.__members__))
         elif verb == INSP_PY:

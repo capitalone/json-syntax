@@ -2,7 +2,6 @@ from .helpers import ErrorContext, err_ctx
 
 from datetime import date, datetime, time
 import math
-from operator import attrgetter
 
 
 def check_parse_error(value, parser, error):
@@ -43,7 +42,8 @@ def check_float(value):
     )
 
 
-convert_enum_str = attrgetter("name")
+def convert_enum_str(value, typ):
+    return typ(value).name
 
 
 def convert_none(value):
