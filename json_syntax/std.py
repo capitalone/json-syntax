@@ -266,7 +266,9 @@ def _stringly(verb, typ, ctx):
 
     This is used internally by dicts.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON) or not issub_safe(typ, (int, str, date, Enum)):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON) or not issub_safe(
+        typ, (int, str, date, Enum)
+    ):
         return
     for base in str, int:
         if issubclass(typ, base):

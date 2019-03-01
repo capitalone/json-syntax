@@ -7,8 +7,8 @@ classes using customizable rules.
 
 If you're like the authors, you tried writing a encoding function that attempted to
 encode and decode by interrogating the types at runtime, maybe calling some method like
-`asdict`. This works fine for generating JSON, but it gets sketchy when trying to decode
-the same JSON.
+`asdict`. This works fine for generating JSON, but it gets sketchy<sup
+id="a1">[1](#f1)</sup> when trying to decode the same JSON.
 
 Further, we have annotations in Python 3! Even if you're not using a type checker, just
 labeling the types of fields makes complex data structures far more comprehensible.
@@ -123,6 +123,18 @@ them, and constructs an action to represent them.
 }
 ```
 
+#### Actual usage
+
+The aim of all this is to enable reliable usage with your preferred JSON library:
+
+```python
+with open('myfile.json', 'r') as fh:
+    my_account = decode_account(json.load(fh))
+
+with open('myfile.json', 'w') as fh:
+    json.dump(encode_account(my_account))
+```
+
 ### Using generic types
 
 Generally, the [typing][] module simple provides capital letter type names that obviously
@@ -156,7 +168,7 @@ The standard rules don't support:
 A union type lets you present alternate types that the converters will attempt in
 sequence, e.g. `typing.Union[MyType, int, MyEnum]`.
 
-This is implemented in the `unions` rule as a so-called<sup id="a1">[1](#f1)</sup>
+This is implemented in the `unions` rule as a so-called<sup id="a2">[2](#f2)</sup>
 undiscriminated union. It means the module won't add any additional information to the
 value such as some kind of explicit tag.
 
@@ -229,7 +241,8 @@ class AbstractAccount:
 class AccountA(AbstractAccount):
     ...
 
-encode_account = rules.lookup(typ=Union[AccountA, AccountB, AccountC], verb='python_to_json')
+encode_account = rules.lookup(typ=Union[AccountA, AccountB, AccountC],
+                              verb='python_to_json')
 ```
 
 ### Adding custom rules
@@ -293,30 +306,36 @@ This package is maintained via the [poetry][] tool. Some useful commands:
 
  1. Setup: `poetry install`
  2. Run tests: `poetry run pytest tests/`
- 3. Reformat: `poetry run black json_syntax/ tests/`
+ 3. Reformat: `poetry run black -N json_syntax/ tests/`
 
 ### Setting up tox
 
 You'll want pyenv, then install the pythons:
 
-   curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-   pyenv install --list | egrep '^ *3\.[4567]|^ *pypy3.5'
-   # figure out what versions you want
-   for v in 3.4.9 3.5.10 ...; do
-      pyenv install $v
-      PYENV_VERSION=$v python get-pip.py
-   done
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    pyenv install --list | egrep '^ *3\.[4567]|^ *pypy3.5'
+    # figure out what versions you want
+    for v in 3.4.9 3.5.10 ...; do
+       pyenv install $v
+       PYENV_VERSION=$v python get-pip.py
+    done
 
-Once you install `tox` in your preferred python, you should be good to go.
+Once you install `tox` in your preferred python, running it is just `tox`.
 
 ### Notes
 
-<b id="f1">1</b>: A discriminated union has a tag that identifies the variant, such as
+<b id="f1">1</b>: Writing the encoder is deceptively easy because the instances in
+Python have complete information. The standard `json` module provides a hook to let
+you encode an object, and another hook to recognize `dict`s that have some special
+attribute. This can work quite well, but you'll have to encode *all* non-JSON types
+with dict-wrappers for the process to work in reverse. [↩](#a1)
+
+<b id="f2">2</b>: A discriminated union has a tag that identifies the variant, such as
 status codes that indicate success and a payload, or some error. Strictly, all unions
-must be discriminated in some way if different code paths are executed. In the
-`unions` rule, the discriminant is the class information in Python, and the structure of
-the JSON data. A less flattering description would be that this is a "poorly"
-discriminated union. [↩](#a1)
+must be discriminated in some way if different code paths are executed. In the `unions`
+rule, the discriminant is the class information in Python, and the structure of the JSON
+data. A less flattering description would be that this is a "poorly" discriminated
+union. [↩](#a2)
 
 [poetry]: https://poetry.eustace.io/docs/#installation
 [gradual typing]: https://www.python.org/dev/peps/pep-0483/#summary-of-gradual-typing

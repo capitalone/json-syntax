@@ -177,7 +177,7 @@ def is_attrs_field_required(field):
         return factory in _missing_values
 
 
-def _add_context(exc, context):
+def _add_context(context, exc):
     try:
         if exc is None:
             return
