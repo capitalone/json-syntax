@@ -20,17 +20,20 @@ from .action_v1 import (
     convert_collection,
     convert_date,
     convert_datetime,
+    convert_decimal_str,
     convert_enum_str,
     convert_float,
     convert_mapping,
     convert_none,
     convert_optional,
     convert_str_enum,
+    convert_str_timedelta,
     convert_time,
+    convert_timedelta_str,
 )
 
 from collections import OrderedDict
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from functools import partial
@@ -132,7 +135,7 @@ def decimals_as_str(verb, typ, ctx):
         if verb == JSON2PY:
             return Decimal
         elif verb == PY2JSON:
-            return str
+            return convert_decimal_str
         elif verb == INSP_PY:
             return partial(check_isinst, typ=Decimal)
         elif verb == INSP_JSON:
@@ -143,15 +146,15 @@ def iso_dates(verb, typ, ctx):
     """
     Rule to handle iso formatted datetimes and dates.
 
-    This is the strict variant that simply uses the `fromisoformat` and `isoformat` methods of `date` and `datetime`.
+    This simply uses the `fromisoformat` and `isoformat` methods of `date` and `datetime`.
 
     There is a loose variant in the examples that will accept a datetime in a date. A datetime always accepts both
     dates and datetimes.
     """
-    if typ not in (date, datetime, time):
+    if typ not in (date, datetime, time, timedelta):
         return
     if verb == PY2JSON:
-        return typ.isoformat
+        return convert_timedelta_str if typ == timedelta else typ.isoformat
     elif verb == INSP_PY:
         return partial(check_has_type, typ=typ)
     elif verb in (JSON2PY, INSP_JSON):
@@ -161,6 +164,8 @@ def iso_dates(verb, typ, ctx):
             parse = convert_datetime
         elif typ == time:
             parse = convert_time
+        elif typ == timedelta:
+            parse = convert_str_timedelta
         else:
             return
         if verb == JSON2PY:

@@ -43,18 +43,18 @@ def std_ruleset(
     For example, to replace ``decimals`` with ``decimals_as_str`` just call ``std_ruleset(decimals=decimals_as_str)``
     """
     return custom(
+        enums,
         atoms,
         floats,
         decimals,
         dates,
         optional,
-        enums,
         lists,
         attrs_classes,
         sets,
-        dicts,
         named_tuples,
         tuples,
+        dicts,
         unions,
         *extras,
         cache=cache,
