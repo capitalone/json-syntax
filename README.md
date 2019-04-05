@@ -306,7 +306,7 @@ This package is maintained via the [poetry][] tool. Some useful commands:
 
  1. Setup: `poetry install`
  2. Run tests: `poetry run pytest tests/`
- 3. Reformat: `poetry run black -N json_syntax/ tests/`
+ 3. Reformat: `poetry run black json_syntax/ tests/`
 
 ### Setting up tox
 

@@ -25,7 +25,7 @@ def check_has_type(value, typ):
 
 def convert_decimal_str(value):
     result = str(value)
-    if result == 'sNaN':
+    if result == "sNaN":
         raise InvalidOperation("Won't save signalling NaN")
     return result
 
@@ -85,8 +85,8 @@ else:
 
 def convert_timedelta_str(dur):
     "Barebones support for storing a timedelta as an ISO8601 duration."
-    micro = '.{:06d}'.format(dur.microseconds) if dur.microseconds else ''
-    return 'P{:d}DT{:d}{}S'.format(dur.days, dur.seconds, micro)
+    micro = ".{:06d}".format(dur.microseconds) if dur.microseconds else ""
+    return "P{:d}DT{:d}{}S".format(dur.days, dur.seconds, micro)
 
 
 _iso8601_duration = re.compile(
@@ -97,36 +97,36 @@ _iso8601_duration = re.compile(
     r"(?:(T)(?=[0-9+-])"
     r"([-+]?\d+(?:[.,]\d+)?H)?"
     r"([-+]?\d+(?:[.,]\d+)?M)?"
-    r"([-+]?\d+(?:[.,]\d+)?S)?)?$",
+    r"([-+]?\d+(?:[.,]\d+)?S)?)?$"
 )
 _duration_args = {
-    'PW': 'weeks',
-    'PD': 'days',
-    'TH': 'hours',
-    'TM': 'minutes',
-    'TS': 'seconds'
+    "PW": "weeks",
+    "PD": "days",
+    "TH": "hours",
+    "TM": "minutes",
+    "TS": "seconds",
 }
 
 
 def convert_str_timedelta(dur):
-    match = _iso8601_duration.match(dur.upper().replace(',', '.'))
-    section = 'P'
+    match = _iso8601_duration.match(dur.upper().replace(",", "."))
+    section = "P"
     if not match:
-        raise ValueError('Value was not an ISO8601 duration.')
+        raise ValueError("Value was not an ISO8601 duration.")
     args = {}
     for elem in match.groups():
         if elem is None:
             continue
-        if elem == 'T':
-            section = 'T'
+        if elem == "T":
+            section = "T"
             continue
         part = section + elem[-1]
         value = float(elem[:-1])
         if not value:
             continue
 
-        if part in ('PY', 'PM'):
-            raise ValueError('Year and month durations not supported')
+        if part in ("PY", "PM"):
+            raise ValueError("Year and month durations not supported")
         args[_duration_args[part]] = value
     return timedelta(**args)
 

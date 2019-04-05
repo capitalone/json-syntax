@@ -85,7 +85,7 @@ def attrs_classes(
         pre_hook_method = getattr(typ, pre_hook, identity)
         return partial(check_dict, inner_map=inner_map, pre_hook=pre_hook_method)
     elif verb == PATTERN:
-        return pat.Object.exact( (name, inner) for name, inner, req in inner_map if req )
+        return pat.Object.exact((name, inner) for name, inner, req in inner_map if req)
 
 
 def named_tuples(verb, typ, ctx):
@@ -94,7 +94,9 @@ def named_tuples(verb, typ, ctx):
 
     Also handles a ``collections.namedtuple`` if you have a fallback handler.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN) or not issub_safe(typ, tuple):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN) or not issub_safe(
+        typ, tuple
+    ):
         return
     try:
         fields = typ._field_types
@@ -138,7 +140,7 @@ def named_tuples(verb, typ, ctx):
     elif verb == INSP_JSON:
         return partial(check_dict, pre_hook=identity, inner_map=tuple(inner_map))
     elif verb == PATTERN:
-        return pat.Object.exact( (name, inner) for name, inner, req in inner_map if req )
+        return pat.Object.exact((name, inner) for name, inner, req in inner_map if req)
 
 
 def tuples(verb, typ, ctx):
@@ -146,7 +148,9 @@ def tuples(verb, typ, ctx):
     Handle a ``Tuple[type, type, type]`` product type. Use a ``NamedTuple`` if you don't
     want a list.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN) or not has_origin(typ, tuple):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN) or not has_origin(
+        typ, tuple
+    ):
         return
     args = typ.__args__
     if Ellipsis in args:

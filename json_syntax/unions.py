@@ -32,22 +32,20 @@ def unions(verb, typ, ctx):
             else:
                 return
             steps = [
-                (ctx.lookup(verb=check_verb, typ=arg),
-                 ctx.lookup(verb=verb, typ=arg),
-                 "<{!s}>".format(arg))
+                (
+                    ctx.lookup(verb=check_verb, typ=arg),
+                    ctx.lookup(verb=verb, typ=arg),
+                    "<{!s}>".format(arg),
+                )
                 for arg in typ.__args__
             ]
             return partial(convert_union, steps=steps, typename=repr(typ))
         elif verb in (INSP_JSON, INSP_PY):
             steps = [
-                (ctx.lookup(verb=verb, typ=arg),
-                 "<{!s}>".format(arg))
+                (ctx.lookup(verb=verb, typ=arg), "<{!s}>".format(arg))
                 for arg in typ.__args__
             ]
             return partial(check_union, steps=steps)
         elif verb == PATTERN:
-            alts = [
-                ctx.lookup(verb=verb, typ=arg)
-                for arg in typ.__args__
-            ]
+            alts = [ctx.lookup(verb=verb, typ=arg) for arg in typ.__args__]
             return pat.Alternatives(alts)

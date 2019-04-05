@@ -25,7 +25,7 @@ hypothesis = "^4.14"
 
 [tool.black]
 line-length = 88
-py36 = true
+target-version = ["py35"]
 
 [tool.tox]
 legacy_tox_ini = """

@@ -26,41 +26,43 @@ def type_value_pairs(base):
     return tv_pairs()
 
 
-atoms = st.sampled_from([
-    type(None),
-    bool,
-    int,
-    float,
-    Decimal,
-    str,
-    dt.date,
-    dt.datetime,
-    dt.time,
-    dt.timedelta,
-])
+atoms = st.sampled_from(
+    [
+        type(None),
+        bool,
+        int,
+        float,
+        Decimal,
+        str,
+        dt.date,
+        dt.datetime,
+        dt.time,
+        dt.timedelta,
+    ]
+)
 
 
 class Head(Enum):
     def __init__(self, disposition):
         self.disposition = disposition
-        self.atomic = disposition == 'atom'
-        self.hashable = disposition in ('atom', 'immut')
-        self.is_union = disposition == 'union'
+        self.atomic = disposition == "atom"
+        self.hashable = disposition in ("atom", "immut")
+        self.is_union = disposition == "union"
 
-    atoms = 'atom'
-    enums = 'atom'
-    lists = 'mut'
-    sets = 'mut'
-    dicts = 'mut'
-    mut_attrs = 'mut'
-    mut_dataclasses = 'mut'
-    hmg_tuples = 'immut'
-    frozensets = 'immut'
-    prod_tuples = 'immut'
-    frz_attrs = 'immut'
-    frz_dataclasses = 'immut'
-    namedtuples = 'immut'
-    unions = 'union'
+    atoms = "atom"
+    enums = "atom"
+    lists = "mut"
+    sets = "mut"
+    dicts = "mut"
+    mut_attrs = "mut"
+    mut_dataclasses = "mut"
+    hmg_tuples = "immut"
+    frozensets = "immut"
+    prod_tuples = "immut"
+    frz_attrs = "immut"
+    frz_dataclasses = "immut"
+    namedtuples = "immut"
+    unions = "union"
 
     @classmethod
     def short(cls, elems):
@@ -79,6 +81,7 @@ class Head(Enum):
 # 1. default values to all of these
 # 2. typeless variants
 # 3. our own subclasses?
+
 
 def map_heads(types, frz_types):
     H = Head
@@ -101,10 +104,10 @@ def map_heads(types, frz_types):
 
 
 def type_tree(*levels):
-    '''
+    """
     Constructs a type tree of a fixed maximum height based on the heads provided.
     The last level must be leaves that can be contained by the levels above.
-    '''
+    """
     types, frz_types = None, None
 
     for level in map(Head.short, reversed(levels)):
@@ -126,10 +129,10 @@ def type_tree(*levels):
 
 
 complex_no_unions = type_tree(
-    {'atom', 'mut', 'immut'},
-    {'atom', 'mut', 'immut'},
-    {'atom', 'mut', 'immut'},
-    {'atom'}
+    {"atom", "mut", "immut"},
+    {"atom", "mut", "immut"},
+    {"atom", "mut", "immut"},
+    {"atom"},
 )
 
-unions_of_simple = type_tree({Head.unions}, {'atom', 'mut', 'immut'}, {'atom'})
+unions_of_simple = type_tree({Head.unions}, {"atom", "mut", "immut"}, {"atom"})

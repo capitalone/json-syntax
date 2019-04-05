@@ -67,7 +67,12 @@ def atoms(verb, typ, ctx):
                 if issubclass(typ, base):
                     return partial(check_isinst, typ=base)
         elif verb == PATTERN:
-            for base, pat in [(NoneType, pat.Null), (str, pat.String.any), (bool, pat.Bool), (int, pat.Number)]:
+            for base, pat in [
+                (NoneType, pat.Null),
+                (str, pat.String.any),
+                (bool, pat.Bool),
+                (int, pat.Number),
+            ]:
                 if issubclass(typ, base):
                     return pat
 
@@ -152,7 +157,7 @@ def decimals_as_str(verb, typ, ctx):
             return partial(check_isinst, typ=Decimal)
         elif verb in (INSP_JSON, PATTERN):
             inspect = partial(check_parse_error, parser=Decimal, error=ArithmeticError)
-            return pat.String('number', inspect) if verb == PATTERN else inspect
+            return pat.String("number", inspect) if verb == PATTERN else inspect
 
 
 def iso_dates(verb, typ, ctx):

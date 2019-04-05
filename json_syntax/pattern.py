@@ -12,18 +12,20 @@ except ImportError:
 
     def _def(obj):
         return obj.for_json()
-    _args = {'default': lambda obj: obj.for_json()}
+
+    _args = {"default": lambda obj: obj.for_json()}
 else:
-    _args = {'for_json': True}
+    _args = {"for_json": True}
 
 dump = partial(json.dump, **_args)
 dumps = partial(json.dumps, **_args)
 
 
 class Matches(IntEnum):
-    '''
+    """
     This determines the degree to which one pattern can shadow another causing potential ambiguity.
-    '''
+    """
+
     always = 0  # Will always match
     sometimes = 1  # It will sometimes match
     potential = 2  # Can't prove it won't match
@@ -65,8 +67,10 @@ def matches(left, right, ctx=None):
             return Matches.never
     ctx[0].add(left)
     ctx[1].add(right)
-    return match_any(left._matches(right, ctx) for left, right
-                     in product(left._unpack(), right._unpack()))
+    return match_any(
+        left._matches(right, ctx)
+        for left, right in product(left._unpack(), right._unpack())
+    )
 
 
 class Pattern:
@@ -96,13 +100,14 @@ class String(Pattern):
     We're deliberately not trying to analyze regexes here as we assume you would want to
     use specialize logic to make such fine distinctions.
     """
+
     def __init__(self, name, arg=None):
         self.name = name
         self.arg = arg
 
     def for_json(self):
-        if name == 'exact':
-            return '=' + arg
+        if name == "exact":
+            return "=" + arg
         else:
             return name
 
@@ -110,12 +115,12 @@ class String(Pattern):
         "Check whether this pattern will match the other."
         if not isinstance(other, StringPattern):
             return Matches.never
-        if self.name == 'str':
+        if self.name == "str":
             return Matches.always  # Strings always overshadow
-        elif other.name == 'str':
+        elif other.name == "str":
             return Matches.sometimes  # Strings are sometimes shadowed
-        if self.name == 'exact':
-            if other.name == 'exact':
+        if self.name == "exact":
+            if other.name == "exact":
                 return Matches.always if self.arg == other.arg else Matches.never
             elif other.arg is None:
                 return Matches.potential
@@ -129,10 +134,10 @@ class _Missing(Pattern):
         return Matches.never
 
     def __repr__(self):
-        return '<missing>'
+        return "<missing>"
 
 
-String.any = String('str')
+String.any = String("str")
 Number = Atom(0)
 Null = Atom(None)
 Bool = Atom(False)
@@ -151,10 +156,12 @@ class Alternatives(Pattern):
         yield from self.alts
 
     def _matches(self, other, ctx):
-        raise NotImplementedError("Didn't call unpack")  # Should be bypassed by _unpack.
+        raise NotImplementedError(
+            "Didn't call unpack"
+        )  # Should be bypassed by _unpack.
 
     def for_json(self):
-        out = ['alts']
+        out = ["alts"]
         out.extend(self.alts)
         return out
 
@@ -183,12 +190,11 @@ class Array(Pattern):
             right = cycle(right)
 
         return matches_all(
-            matches(l, r, ctx) for l, r
-            in zip_longest(left, right, fillvalue=Missing)
+            matches(l, r, ctx) for l, r in zip_longest(left, right, fillvalue=Missing)
         )
 
     def for_json(self):
-        out = ['...'] if self.homog else ['exact']
+        out = ["..."] if self.homog else ["exact"]
         out.extend(self.elems)
         return out
 
@@ -210,15 +216,10 @@ class Object(Pattern):
         if not isinstance(other, Object):
             return Matches.never
 
-        return matches_all(
-            matches_any(
-                matches(l, r, ctx)
-                for r in right
-            ) for l in left
-        )
+        return matches_all(matches_any(matches(l, r, ctx) for r in right) for l in left)
 
     def for_json(self):
         out = dict(self.items)
         if self.homog:
-            out['...'] = '...'
+            out["..."] = "..."
         return out
