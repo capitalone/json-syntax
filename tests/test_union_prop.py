@@ -24,3 +24,16 @@ def test_roundtrip(pair):
     act2 = rs.lookup(verb=JSON2PY, typ=typ)
     rt_py_value = act2(json_value)
     assert py_value == rt_py_value
+
+
+# @settings(suppress_health_check=[HealthCheck.too_slow], max_examples=100, deadline=None)
+# @given(ts.type_value_pairs(ts.unions_of_simple))
+# def test_roundtrip_union_simple(pair):
+#     typ, py_value = pair
+#     rs = std_ruleset()
+#     act = rs.lookup(verb=PY2JSON, typ=typ)
+#     json_value = act(py_value)
+#     act2 = rs.lookup(verb=JSON2PY, typ=typ)
+#     rt_py_value = act2(json_value)
+#     rt_json_value = act(rt_py_value)
+#     assert py_value == rt_py_value or json_value == rt_json_value

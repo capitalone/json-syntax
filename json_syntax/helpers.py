@@ -9,6 +9,7 @@ JSON2PY = "json_to_python"
 PY2JSON = "python_to_json"
 INSP_JSON = "inspect_json"
 INSP_PY = "inspect_python"
+PATTERN = "show_pattern"
 NoneType = type(None)
 SENTINEL = object()
 python_minor = sys.version_info[:2]

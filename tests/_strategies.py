@@ -15,6 +15,7 @@ import os
 import typing
 
 
+MAX_FIELDS = 8
 _max_cp = None if os.environ.get('UNICODE_NAMES') else 0x7f
 _any_char = st.characters(min_codepoint=1, max_codepoint=_max_cp)
 _ident_start = st.characters(whitelist_categories=['Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nl'],
@@ -40,11 +41,11 @@ def _make_enum(name, elems):
 
 
 idents = _idents()
-enums = st.builds(_make_enum, idents, st.lists(idents, min_size=1, max_size=12, unique=True))
+enums = st.builds(_make_enum, idents, st.lists(idents, min_size=1, max_size=MAX_FIELDS, unique=True))
 
 
 def fields_idents(types):
-    return st.dictionaries(idents, types, dict_class=list, min_size=0, max_size=6)
+    return st.dictionaries(idents, types, dict_class=list, min_size=0, max_size=MAX_FIELDS)
 
 
 class _Faux(attr.validators._InstanceOfValidator):
@@ -124,7 +125,7 @@ def dicts(val_types):
 
 
 def prod_tuples(types):
-    return st.builds(lambda a: typing.Tuple[tuple(a)], st.lists(types))
+    return st.builds(lambda a: typing.Tuple[tuple(a)], st.lists(types, min_size=1, max_size=MAX_FIELDS))
 
 
 def unions(types, max_size=None):
