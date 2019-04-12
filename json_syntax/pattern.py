@@ -70,7 +70,11 @@ class Atom(Pattern):
         return self.value
 
     def _matches(self, other, ctx):
-        return Matches.always if isinstance(other, Atom) and self.value == other.value else Matches.never
+        return (
+            Matches.always
+            if isinstance(other, Atom) and self.value == other.value
+            else Matches.never
+        )
 
 
 class String(Pattern):
@@ -131,8 +135,8 @@ String.any = String("str")
 Number = Atom(0)
 Null = Atom(None)
 Bool = Atom(False)
-Missing = _Unknown('<missing>', Matches.never)
-Unknown = _Unknown('<unknown>', Matches.potential)
+Missing = _Unknown("<missing>", Matches.never)
+Unknown = _Unknown("<unknown>", Matches.potential)
 
 
 class Alternatives(Pattern):
@@ -162,7 +166,7 @@ class Array(Pattern):
     def __init__(self, elems, *, homog):
         self.elems = tuple(elems)
         assert all(isinstance(elem, Pattern) for elem in self.elems)
-        self.homog = homog
+        self._homog = homog
 
     @classmethod
     def homog(cls, elem):
@@ -175,20 +179,20 @@ class Array(Pattern):
     def _matches(self, other, ctx):
         if not isinstance(other, Array):
             return Matches.never
+        if self._homog and not other.elems:
+            return Matches.always
         left = self.elems
         right = other.elems
-        zero_match = False
-        if self.homog and not other.homog:
+        if self._homog and not other._homog:
             left = islice(cycle(left), len(right))
-        elif not self.homog and other.homog:
+        elif not self._homog and other._homog:
             right = islice(cycle(right), len(left))
-        elif self.homog and other.homog:
-            zero_match = True
 
         possible = matches_all(
             matches(l, r, ctx) for l, r in zip_longest(left, right, fillvalue=Missing)
         )
-        if zero_match:
+        if self._homog and other._homog:
+            # Zero cases can't be distinguished match.
             possible = matches_any([Matches.sometimes, possible])
         return possible
 
@@ -202,12 +206,15 @@ class Array(Pattern):
 class Object(Pattern):
     def __init__(self, items, *, homog):
         self.items = tuple(items)
-        valid = all(isinstance(key, Pattern) and isinstance(val, Pattern) for key, val in self.items)
+        valid = all(
+            isinstance(key, Pattern) and isinstance(val, Pattern)
+            for key, val in self.items
+        )
         if not valid:
             # for key, val in self.items:
             #     print(f"{key!r}: {type(key)} / {val!r}: {type(val)}")
             raise TypeError("Keys and values must be patterns")
-        self.homog = homog
+        self._homog = homog
 
     @classmethod
     def homog(cls, key, val):
@@ -220,11 +227,18 @@ class Object(Pattern):
     def _matches(self, other, ctx):
         if not isinstance(other, Object):
             return Matches.never
+        if self._homog and not other.items:
+            return Matches.always
 
-        return matches_all(
-            matches_any(matches(lk, rk, ctx) and matches(lv, rv, ctx) for rk, rv in other.items)
+        possible = matches_all(
+            matches_any(
+                matches(lk, rk, ctx) and matches(lv, rv, ctx) for rk, rv in other.items
+            )
             for lk, lv in self.items
         )
+        if self._homog and other._homog:
+            possible = matches_any([Matches.sometimes, possible])
+        return possible
 
     def for_json(self):
         def jsonify(key):
@@ -234,8 +248,9 @@ class Object(Pattern):
                 return key
             else:
                 return for_json()
+
         out = {jsonify(k): v for k, v in self.items}
-        if self.homog:
+        if self._homog:
             out["..."] = "..."
         return out
 
@@ -243,6 +258,7 @@ class Object(Pattern):
 @singledispatch
 def is_ambiguous(pattern, threshold=Matches.always, _path=()):
     raise TypeError("pattern must be a recognized subclass of Pattern.")
+
 
 @is_ambiguous.register(Atom)
 @is_ambiguous.register(String)
@@ -261,22 +277,27 @@ def _any(iterable):
             return item
     return ()
 
+
 @is_ambiguous.register(Array)
 def _(pattern, threshold=Matches.always, _path=()):
-    _path += ('[]',)
+    _path += ("[]",)
     return _any(is_ambiguous(elem, threshold, _path) for elem in pattern.elems)
+
 
 @is_ambiguous.register(Object)
 def _(pattern, threshold=Matches.always, _path=()):
-    return _any(is_ambiguous(val, threshold, _path + (str(key),)) for key, val in pattern.items)
+    return _any(
+        is_ambiguous(val, threshold, _path + (str(key),)) for key, val in pattern.items
+    )
+
 
 @is_ambiguous.register(Alternatives)
 def _(pattern, threshold=Matches.always, _path=()):
     # An ambiguous pattern is one where an earlier pattern shadows a later pattern.
     alts = pattern.alts
     for i, early in enumerate(alts[:-1]):
-        for late in alts[i + 1:]:
+        for late in alts[i + 1 :]:
             if matches(early, late) <= threshold:
-                return _path + (f'alternative {i}',)
+                return _path + (f"alternative {i}",)
 
     return ()

@@ -136,3 +136,10 @@ complex_no_unions = type_tree(
 )
 
 unions_of_simple = type_tree({Head.unions}, {"atom", "mut", "immut"}, {"atom"})
+
+complex_anything = type_tree(
+    {"atom", "mut", "immut", "unions"},
+    {"atom", "mut", "immut", "unions"},
+    {"atom", "mut", "immut", "unions"},
+    {"atom"},
+)
