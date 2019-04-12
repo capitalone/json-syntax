@@ -67,14 +67,14 @@ def atoms(verb, typ, ctx):
                 if issubclass(typ, base):
                     return partial(check_isinst, typ=base)
         elif verb == PATTERN:
-            for base, pat in [
+            for base, node in [
                 (NoneType, pat.Null),
                 (str, pat.String.any),
                 (bool, pat.Bool),
                 (int, pat.Number),
             ]:
                 if issubclass(typ, base):
-                    return pat
+                    return node
 
 
 def floats(verb, typ, ctx):
@@ -242,7 +242,7 @@ def optional(verb, typ, ctx):
     elif verb in (INSP_JSON, INSP_PY):
         return partial(check_optional, inner=inner)
     elif verb == PATTERN:
-        return pat.Alternatives([None, inner])
+        return pat.Alternatives([pat.Null, inner])
 
 
 def lists(verb, typ, ctx):

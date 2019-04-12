@@ -12,6 +12,7 @@ from typing import Union, List, Tuple, Set, FrozenSet, Dict
 
 from json_syntax import std_ruleset
 from json_syntax.helpers import PY2JSON, JSON2PY, INSP_PY, INSP_JSON, NoneType
+from json_syntax.pattern import Matches
 
 
 @settings(suppress_health_check=[HealthCheck.too_slow], max_examples=100, deadline=None)
@@ -26,14 +27,18 @@ def test_roundtrip(pair):
     assert py_value == rt_py_value
 
 
-# @settings(suppress_health_check=[HealthCheck.too_slow], max_examples=100, deadline=None)
-# @given(ts.type_value_pairs(ts.unions_of_simple))
-# def test_roundtrip_union_simple(pair):
-#     typ, py_value = pair
-#     rs = std_ruleset()
-#     act = rs.lookup(verb=PY2JSON, typ=typ)
-#     json_value = act(py_value)
-#     act2 = rs.lookup(verb=JSON2PY, typ=typ)
-#     rt_py_value = act2(json_value)
-#     rt_json_value = act(rt_py_value)
-#     assert py_value == rt_py_value or json_value == rt_json_value
+@settings(suppress_health_check=[HealthCheck.too_slow], max_examples=1000, deadline=None)
+@given(ts.type_value_pairs(ts.unions_of_simple))
+def test_roundtrip_union_simple(pair):
+    typ, py_value = pair
+    rs = std_ruleset()
+    print()
+    print()
+    print(f'{py_value!r} : {typ}')
+    print(rs.lookup(verb="show_pattern", typ=typ))
+    act = rs.lookup(verb=PY2JSON, typ=typ)
+    json_value = act(py_value)
+    act2 = rs.lookup(verb=JSON2PY, typ=typ)
+    rt_py_value = act2(json_value)
+    if not rs.is_ambiguous(typ=typ, threshold=Matches.sometimes):
+        assert py_value == rt_py_value

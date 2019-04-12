@@ -85,7 +85,7 @@ def attrs_classes(
         pre_hook_method = getattr(typ, pre_hook, identity)
         return partial(check_dict, inner_map=inner_map, pre_hook=pre_hook_method)
     elif verb == PATTERN:
-        return pat.Object.exact((name, inner) for name, inner, req in inner_map if req)
+        return pat.Object.exact((pat.String.exact(name), inner or pat.Unkown) for name, inner, req in inner_map if req)
 
 
 def named_tuples(verb, typ, ctx):
@@ -140,7 +140,7 @@ def named_tuples(verb, typ, ctx):
     elif verb == INSP_JSON:
         return partial(check_dict, pre_hook=identity, inner_map=tuple(inner_map))
     elif verb == PATTERN:
-        return pat.Object.exact((name, inner) for name, inner, req in inner_map if req)
+        return pat.Object.exact((pat.String.exact(name), inner) for name, inner, req in inner_map if req)
 
 
 def tuples(verb, typ, ctx):

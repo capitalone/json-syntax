@@ -2,7 +2,8 @@
 Patterns to represent roughly what syntax will look like, and also to investigate whether
 unions are potentially ambiguous.
 """
-from functools import partial, lru_cache
+from functools import partial, lru_cache, singledispatch
+from itertools import chain, cycle, islice, product, zip_longest
 from enum import IntEnum
 
 try:
@@ -32,45 +33,22 @@ class Matches(IntEnum):
     never = 3  # Provably won't match
 
 
-@lru_cache(32)
-def _reduce(left, right, reverse):
-    consider = (left, right)
-    seq = Matches
-    if reverse:
-        seq = reversed(seq)
-    for val in seq:
-        if val in consider:
-            return val
-    raise ValueError("Can't reduce against unknown type")
-
-
-def _match_many(source, *, pos):
-    "Combine matches where all elements must match."
-    result = Matches.always if pos else Matches.never
-    stop = Matches.never if pos else Matches.always
-    for match in source:
-        result = _reduce(result, match, reverse=pos)
-        if result == stop:
-            break
-    return result
-
-
-match_all = partial(_match_many, pos=True)
-match_any = partial(_match_many, pos=False)
+matches_all = partial(max, default=Matches.always)
+matches_any = partial(min, default=Matches.never)
 
 
 def matches(left, right, ctx=None):
     if ctx is None:
-        ctx = (set(), set())
+        ctx = set()
     else:
-        if left in ctx[0] or right in ctx[1]:
-            return Matches.never
-    ctx[0].add(left)
-    ctx[1].add(right)
-    return match_any(
+        if (left, right) in ctx:
+            return Matches.potential
+    ctx.add((left, right))
+    result = matches_any(
         left._matches(right, ctx)
         for left, right in product(left._unpack(), right._unpack())
     )
+    return result
 
 
 class Pattern:
@@ -84,12 +62,15 @@ class Pattern:
         return dumps(self, indent=2)
 
 
-class Atom:
+class Atom(Pattern):
     def __init__(self, value):
         self.value = value
 
+    def for_json(self):
+        return self.value
+
     def _matches(self, other, ctx):
-        return isinstance(other, Atom) and self.value == other.value
+        return Matches.always if isinstance(other, Atom) and self.value == other.value else Matches.never
 
 
 class String(Pattern):
@@ -106,14 +87,19 @@ class String(Pattern):
         self.arg = arg
 
     def for_json(self):
-        if name == "exact":
-            return "=" + arg
+        if self.name == "exact":
+            return "=" + self.arg
         else:
-            return name
+            return self.name
+
+    @classmethod
+    def exact(cls, string):
+        assert isinstance(string, str)
+        return cls("exact", string)
 
     def _matches(self, other, ctx):
         "Check whether this pattern will match the other."
-        if not isinstance(other, StringPattern):
+        if not isinstance(other, String):
             return Matches.never
         if self.name == "str":
             return Matches.always  # Strings always overshadow
@@ -129,19 +115,24 @@ class String(Pattern):
         return Matches.always if self.name == other.name else Matches.potential
 
 
-class _Missing(Pattern):
+class _Unknown(Pattern):
+    def __init__(self, name, match):
+        self._name = name
+        self._match = match
+
     def _matches(self, other, ctx):
-        return Matches.never
+        return self._match
 
     def __repr__(self):
-        return "<missing>"
+        return self._name
 
 
 String.any = String("str")
 Number = Atom(0)
 Null = Atom(None)
 Bool = Atom(False)
-Missing = _Missing()
+Missing = _Unknown('<missing>', Matches.never)
+Unknown = _Unknown('<unknown>', Matches.potential)
 
 
 class Alternatives(Pattern):
@@ -151,6 +142,7 @@ class Alternatives(Pattern):
 
     def __init__(self, alts):
         self.alts = tuple(alts)
+        assert all(isinstance(alt, Pattern) for alt in self.alts)
 
     def _unpack(self):
         yield from self.alts
@@ -169,6 +161,7 @@ class Alternatives(Pattern):
 class Array(Pattern):
     def __init__(self, elems, *, homog):
         self.elems = tuple(elems)
+        assert all(isinstance(elem, Pattern) for elem in self.elems)
         self.homog = homog
 
     @classmethod
@@ -184,24 +177,36 @@ class Array(Pattern):
             return Matches.never
         left = self.elems
         right = other.elems
+        zero_match = False
         if self.homog and not other.homog:
-            left = cycle(left)
+            left = islice(cycle(left), len(right))
         elif not self.homog and other.homog:
-            right = cycle(right)
+            right = islice(cycle(right), len(left))
+        elif self.homog and other.homog:
+            zero_match = True
 
-        return matches_all(
+        possible = matches_all(
             matches(l, r, ctx) for l, r in zip_longest(left, right, fillvalue=Missing)
         )
+        if zero_match:
+            possible = matches_any([Matches.sometimes, possible])
+        return possible
 
     def for_json(self):
-        out = ["..."] if self.homog else ["exact"]
-        out.extend(self.elems)
+        out = list(self.elems)
+        if self.homog:
+            out.append("...")
         return out
 
 
 class Object(Pattern):
     def __init__(self, items, *, homog):
         self.items = tuple(items)
+        valid = all(isinstance(key, Pattern) and isinstance(val, Pattern) for key, val in self.items)
+        if not valid:
+            # for key, val in self.items:
+            #     print(f"{key!r}: {type(key)} / {val!r}: {type(val)}")
+            raise TypeError("Keys and values must be patterns")
         self.homog = homog
 
     @classmethod
@@ -216,10 +221,62 @@ class Object(Pattern):
         if not isinstance(other, Object):
             return Matches.never
 
-        return matches_all(matches_any(matches(l, r, ctx) for r in right) for l in left)
+        return matches_all(
+            matches_any(matches(lk, rk, ctx) and matches(lv, rv, ctx) for rk, rv in other.items)
+            for lk, lv in self.items
+        )
 
     def for_json(self):
-        out = dict(self.items)
+        def jsonify(key):
+            try:
+                for_json = key.for_json
+            except AttributeError:
+                return key
+            else:
+                return for_json()
+        out = {jsonify(k): v for k, v in self.items}
         if self.homog:
             out["..."] = "..."
         return out
+
+
+@singledispatch
+def is_ambiguous(pattern, threshold=Matches.always, _path=()):
+    raise TypeError("pattern must be a recognized subclass of Pattern.")
+
+@is_ambiguous.register(Atom)
+@is_ambiguous.register(String)
+def _(pattern, threshold=Matches.always, _path=()):
+    return ()
+
+
+@is_ambiguous.register(_Unknown)
+def _(pattern, threshold=Matches.always, _path=()):
+    return (str(pattern),) if pattern._match <= threshold else ()
+
+
+def _any(iterable):
+    for item in iterable:
+        if bool(item):
+            return item
+    return ()
+
+@is_ambiguous.register(Array)
+def _(pattern, threshold=Matches.always, _path=()):
+    _path += ('[]',)
+    return _any(is_ambiguous(elem, threshold, _path) for elem in pattern.elems)
+
+@is_ambiguous.register(Object)
+def _(pattern, threshold=Matches.always, _path=()):
+    return _any(is_ambiguous(val, threshold, _path + (str(key),)) for key, val in pattern.items)
+
+@is_ambiguous.register(Alternatives)
+def _(pattern, threshold=Matches.always, _path=()):
+    # An ambiguous pattern is one where an earlier pattern shadows a later pattern.
+    alts = pattern.alts
+    for i, early in enumerate(alts[:-1]):
+        for late in alts[i + 1:]:
+            if matches(early, late) <= threshold:
+                return _path + (f'alternative {i}',)
+
+    return ()

@@ -109,6 +109,8 @@ _duration_args = {
 
 
 def convert_str_timedelta(dur):
+    if not isinstance(dur, str):
+        raise ValueError("Value was not a string.")
     match = _iso8601_duration.match(dur.upper().replace(",", "."))
     section = "P"
     if not match:

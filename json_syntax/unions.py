@@ -1,4 +1,4 @@
-from .helpers import has_origin, JSON2PY, PY2JSON, INSP_JSON, INSP_PY
+from .helpers import has_origin, JSON2PY, PY2JSON, INSP_JSON, INSP_PY, PATTERN
 from .action_v1 import convert_union, check_union
 from . import pattern as pat
 

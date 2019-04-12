@@ -22,7 +22,7 @@ from .std import (  # noqa
 )
 from .attrs import attrs_classes, named_tuples, tuples
 from .unions import unions
-from .helpers import JSON2PY, PY2JSON, INSP_PY, INSP_JSON  # noqa
+from .helpers import JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN  # noqa
 
 
 def std_ruleset(
