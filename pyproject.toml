@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "json-syntax"
-version = "0.2.0"
+version = "0.2.1"
 description = "Generates functions to convert Python classes to JSON dumpable objects."
 authors = ["Ben Samuel <bsamuel@unitedincome.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/UnitedIncome/json-syntax"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries"
 ]
@@ -37,8 +37,10 @@ skipsdist = true
 [testenv]
 deps =
     poetry
+whitelist_externals =
+    /bin/rm
 commands =
-    python -V
+    /bin/rm -r pip-wheel-metadata
     poetry install
     poetry run pytest {posargs}
 """

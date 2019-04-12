@@ -298,6 +298,6 @@ def _(pattern, threshold=Matches.always, _path=()):
     for i, early in enumerate(alts[:-1]):
         for late in alts[i + 1 :]:
             if matches(early, late) <= threshold:
-                return _path + (f"alternative {i}",)
+                return _path + ("alternative {}".format(i),)
 
     return ()
