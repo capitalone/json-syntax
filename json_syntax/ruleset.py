@@ -1,4 +1,6 @@
 from .cache import SimpleCache
+from .helpers import PATTERN
+from . import pattern
 
 import logging
 
@@ -52,5 +54,15 @@ class RuleSet:
         finally:
             self.cache.de_flight(verb=verb, typ=typ, forward=forward)
 
+        if action is None and not accept_missing:
+            raise ValueError("Failed: lookup({!s}, {!r}".format(verb, typ))
+
     def fallback(self, verb, typ):
-        pass
+        if verb == PATTERN:
+            return pattern.Unknown
+        else:
+            return None
+
+    def is_ambiguous(self, typ, threshold=pattern.Matches.always):
+        pat = self.lookup(verb=PATTERN, typ=typ)
+        return pattern.is_ambiguous(pat, threshold=threshold)

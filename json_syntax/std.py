@@ -7,6 +7,7 @@ from .helpers import (
     PY2JSON,
     INSP_JSON,
     INSP_PY,
+    PATTERN,
 )
 from .action_v1 import (
     check_collection,
@@ -20,17 +21,21 @@ from .action_v1 import (
     convert_collection,
     convert_date,
     convert_datetime,
+    convert_decimal_str,
     convert_enum_str,
     convert_float,
     convert_mapping,
     convert_none,
     convert_optional,
     convert_str_enum,
+    convert_str_timedelta,
     convert_time,
+    convert_timedelta_str,
 )
+from . import pattern as pat
 
 from collections import OrderedDict
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from functools import partial
@@ -61,6 +66,15 @@ def atoms(verb, typ, ctx):
             for base in (NoneType, str, bool, int):
                 if issubclass(typ, base):
                     return partial(check_isinst, typ=base)
+        elif verb == PATTERN:
+            for base, node in [
+                (NoneType, pat.Null),
+                (str, pat.String.any),
+                (bool, pat.Bool),
+                (int, pat.Number),
+            ]:
+                if issubclass(typ, base):
+                    return node
 
 
 def floats(verb, typ, ctx):
@@ -82,6 +96,8 @@ def floats(verb, typ, ctx):
             return partial(check_isinst, typ=float)
         elif verb == INSP_JSON:
             return partial(check_isinst, typ=(int, float))
+        elif verb == PATTERN:
+            return pat.Number
 
 
 def floats_nan_str(verb, typ, ctx):
@@ -101,6 +117,8 @@ def floats_nan_str(verb, typ, ctx):
             return partial(check_isinst, typ=float)
         elif verb == INSP_JSON:
             return check_float
+        elif verb == PATTERN:
+            return pat.Number
 
 
 def decimals(verb, typ, ctx):
@@ -118,6 +136,8 @@ def decimals(verb, typ, ctx):
             return Decimal
         elif verb in (INSP_JSON, INSP_PY):
             return partial(check_isinst, typ=Decimal)
+        elif verb == PATTERN:
+            return pat.Number
 
 
 def decimals_as_str(verb, typ, ctx):
@@ -132,43 +152,46 @@ def decimals_as_str(verb, typ, ctx):
         if verb == JSON2PY:
             return Decimal
         elif verb == PY2JSON:
-            return str
+            return convert_decimal_str
         elif verb == INSP_PY:
             return partial(check_isinst, typ=Decimal)
-        elif verb == INSP_JSON:
-            return partial(check_parse_error, parser=Decimal, error=ArithmeticError)
+        elif verb in (INSP_JSON, PATTERN):
+            inspect = partial(check_parse_error, parser=Decimal, error=ArithmeticError)
+            return pat.String("number", inspect) if verb == PATTERN else inspect
 
 
 def iso_dates(verb, typ, ctx):
     """
     Rule to handle iso formatted datetimes and dates.
 
-    This is the strict variant that simply uses the `fromisoformat` and `isoformat` methods of `date` and `datetime`.
+    This simply uses the `fromisoformat` and `isoformat` methods of `date` and `datetime`.
 
     There is a loose variant in the examples that will accept a datetime in a date. A datetime always accepts both
     dates and datetimes.
     """
-    if typ not in (date, datetime, time):
+    if typ not in (date, datetime, time, timedelta):
         return
     if verb == PY2JSON:
-        return typ.isoformat
+        return convert_timedelta_str if typ == timedelta else typ.isoformat
     elif verb == INSP_PY:
         return partial(check_has_type, typ=typ)
-    elif verb in (JSON2PY, INSP_JSON):
+    elif verb in (JSON2PY, INSP_JSON, PATTERN):
         if typ == date:
             parse = convert_date
         elif typ == datetime:
             parse = convert_datetime
         elif typ == time:
             parse = convert_time
+        elif typ == timedelta:
+            parse = convert_str_timedelta
         else:
             return
         if verb == JSON2PY:
             return parse
-        else:
-            return partial(
-                check_parse_error, parser=parse, error=(TypeError, ValueError)
-            )
+        inspect = partial(
+            check_parse_error, parser=parse, error=(TypeError, ValueError)
+        )
+        return pat.String(typ.__name__, inspect) if verb == PATTERN else inspect
 
 
 def enums(verb, typ, ctx):
@@ -180,8 +203,9 @@ def enums(verb, typ, ctx):
             return partial(convert_str_enum, mapping=dict(typ.__members__))
         elif verb == INSP_PY:
             return partial(check_isinst, typ=typ)
-        elif verb == INSP_JSON:
-            return partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
+        elif verb in (INSP_JSON, PATTERN):
+            inspect = partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
+            return pat.String(typ.__name__, inspect) if verb == PATTERN else inspect
 
 
 def faux_enums(verb, typ, ctx):
@@ -190,15 +214,16 @@ def faux_enums(verb, typ, ctx):
         if verb in (JSON2PY, PY2JSON):
             mapping = {name: name for name in typ.__members__}
             return partial(convert_str_enum, mapping=mapping)
-        elif verb in (INSP_JSON, INSP_PY):
-            return partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
+        elif verb in (INSP_JSON, INSP_PY, PATTERN):
+            inspect = partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
+            return pat.String(typ.__name__, inspect) if verb == PATTERN else inspect
 
 
 def optional(verb, typ, ctx):
     """
     Handle an ``Optional[inner]`` by passing ``None`` through.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN):
         return
     if has_origin(typ, Union, num_args=2):
         if NoneType not in typ.__args__:
@@ -216,6 +241,8 @@ def optional(verb, typ, ctx):
         return partial(convert_optional, inner=inner)
     elif verb in (INSP_JSON, INSP_PY):
         return partial(check_optional, inner=inner)
+    elif verb == PATTERN:
+        return pat.Alternatives([pat.Null, inner])
 
 
 def lists(verb, typ, ctx):
@@ -225,7 +252,7 @@ def lists(verb, typ, ctx):
     Trivia: the ellipsis indicates a homogenous tuple; ``Tuple[A, B, C]`` is a product
     type that contains exactly those elements.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN):
         return
     if has_origin(typ, list, num_args=1):
         (inner,) = typ.__args__
@@ -236,28 +263,32 @@ def lists(verb, typ, ctx):
     else:
         return
     inner = ctx.lookup(verb=verb, typ=inner)
-    con = list if verb in (PY2JSON, INSP_JSON) else get_origin(typ)
+    con = list if verb in (PY2JSON, INSP_JSON, PATTERN) else get_origin(typ)
     if verb in (JSON2PY, PY2JSON):
         return partial(convert_collection, inner=inner, con=con)
     elif verb in (INSP_JSON, INSP_PY):
         return partial(check_collection, inner=inner, con=con)
+    elif verb == PATTERN:
+        return pat.Array.homog(inner)
 
 
 def sets(verb, typ, ctx):
     """
     Handle a ``Set[type]`` or ``FrozenSet[type]``.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
+    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN):
         return
     if not has_origin(typ, (set, frozenset), num_args=1):
         return
     (inner,) = typ.__args__
-    con = list if verb in (PY2JSON, INSP_JSON) else get_origin(typ)
+    con = list if verb in (PY2JSON, INSP_JSON, PATTERN) else get_origin(typ)
     inner = ctx.lookup(verb=verb, typ=inner)
     if verb in (JSON2PY, PY2JSON):
         return partial(convert_collection, inner=inner, con=con)
     elif verb in (INSP_JSON, INSP_PY):
         return partial(check_collection, inner=inner, con=con)
+    elif verb == PATTERN:
+        return pat.Array.homog(inner)
 
 
 def _stringly(verb, typ, ctx):
@@ -266,16 +297,19 @@ def _stringly(verb, typ, ctx):
 
     This is used internally by dicts.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON) or not issub_safe(
-        typ, (int, str, date, Enum)
-    ):
-        return
     for base in str, int:
         if issubclass(typ, base):
+            if verb == PATTERN and base == str:
+                return pat.String.any
             if verb in (JSON2PY, PY2JSON):
                 return base
-            elif verb in (INSP_JSON, INSP_PY):
+            elif verb == INSP_PY:
                 return partial(check_isinst, typ=base)
+            elif verb in (INSP_JSON, PATTERN):
+                inspect = partial(check_parse_error, parser=base, error=ValueError)
+                return pat.String(typ.__name__, inspect) if verb == PATTERN else inspect
+    if issubclass(typ, (datetime, time)):
+        return
     for rule in enums, iso_dates:
         action = rule(verb=verb, typ=typ, ctx=ctx)
         if action is not None:
@@ -284,10 +318,8 @@ def _stringly(verb, typ, ctx):
 
 def dicts(verb, typ, ctx):
     """
-    Handle a ``Dict[key, value]`` where key is a string, integer or enum type.
+    Handle a ``Dict[key, value]`` where key is a string, integer, date or enum type.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON):
-        return
     if not has_origin(typ, (dict, OrderedDict), num_args=2):
         return
     (key_type, val_type) = typ.__args__
@@ -299,3 +331,5 @@ def dicts(verb, typ, ctx):
         return partial(convert_mapping, key=key_type, val=val_type, con=get_origin(typ))
     elif verb in (INSP_JSON, INSP_PY):
         return partial(check_mapping, key=key_type, val=val_type, con=get_origin(typ))
+    elif verb == PATTERN:
+        return pat.Object.homog(key_type, val_type)

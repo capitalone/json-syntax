@@ -22,7 +22,7 @@ from .std import (  # noqa
 )
 from .attrs import attrs_classes, named_tuples, tuples
 from .unions import unions
-from .helpers import JSON2PY, PY2JSON, INSP_PY, INSP_JSON  # noqa
+from .helpers import JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN  # noqa
 
 
 def std_ruleset(
@@ -43,18 +43,18 @@ def std_ruleset(
     For example, to replace ``decimals`` with ``decimals_as_str`` just call ``std_ruleset(decimals=decimals_as_str)``
     """
     return custom(
+        enums,
         atoms,
         floats,
         decimals,
         dates,
         optional,
-        enums,
         lists,
         attrs_classes,
         sets,
-        dicts,
         named_tuples,
         tuples,
+        dicts,
         unions,
         *extras,
         cache=cache,

@@ -26,8 +26,8 @@ structure using libraries like [attrs][].
  * The library has no dependencies of its own
     * It does not actually read or write JSON
 
-At the time of writing, the library is in **alpha** and the API may move around or be
-renamed.
+At the time of writing, the library is in **beta** and the API is relatively stable but
+may change.
 
 ### Supported types
 
@@ -219,7 +219,7 @@ During encoding, the reverse sequence takes place:
 
 #### JSON type check hook
 
-Type checks are only used in `json-syntax` to support `typing.Union`; in a nutshell, the
+Type checks are only used in _json-syntax_ to support `typing.Union`; in a nutshell, the
 `unions` rule will inspect some JSON to see which variant is present.
 
 If a type-check hook is not defined, `__json_pre_decode__` will be called before the
@@ -249,9 +249,40 @@ encode_account = rules.lookup(typ=Union[AccountA, AccountB, AccountC],
 
 See [the examples][] for details on custom rules.
 
+### Debugging amibguous structures
+
+(May need more docs and some test cases.)
+
+As _json-syntax_ tries to directly translate your Python types to JSON, it is possible
+to write ambiguous structures. To avoid this, there is a handy `is_ambiguous` method:
+
+```python
+# This is true because both are represented as an array of numbers in JSON.
+rules.is_ambiguous(typ=Union[List[int], Set[int]])
+
+@dataclass
+class Account:
+    user: str
+    address: str
+
+# This is true because such a dictionary would always match the contents of the account.
+rules.is_ambiguous(typ=Union[Dict[str, str], Account])
+```
+
+The aim of this is to let you put a check in your unit tests to make sure data can be
+reliably expressed given your particular case.
+
+Internally, this is using the `PATTERN` verb to represent the JSON pattern, so this may
+be helpful in understanding how _json-syntax_ is trying to represent your data:
+
+```python
+print(rules.lookup(typ=MyAmbiguousClass, verb='show_pattern'))
+```
+
 ### Sharp edges
 
-_Alpha release status._ This API may change, there are probably bugs!
+_Beta release status._ This API may change, there are probably bugs! In particular, the
+status of rules accepting subclasses is likely to change.
 
 _The RuleSet caches encoders._ Construct a new ruleset if you want to change settings.
 
@@ -265,28 +296,8 @@ _Everything to do with typing._ It's a bit magical and sort of wasn't designed f
 [We have a guide to it to try and help][types].
 
 _Union types._ You can use `typing.Union` to allow a member to be one of some number of
-alternates, but there are some caveats. These are documented in code in `test_unions`,
-but in plain English:
-
-When encoding Python to JSON:
-
- * `Union[Super, Sub]` will never match Sub when converting from Python to JSON.
-
-When decoding JSON to Python:
-
- * `Union[str, Stringly]` will never construct an instance that is represented as a
-   string in JSON.
-    * This includes enums, dates and special float values (`Nan`, `-inf`, etc.) may be
-      represented as strings.
- * `Union[datetime, date]` will never construct a date because `YYYY-MM-DD` is a valid
-   datetime according to ISO8601.
- * `Union[Dict[str, Value], MyAttrs]` will never construct `MyAttrs` if all its
-   attributes are `Value`.
- * `Union[List[X], Set[X], FrozenSet[X], Tuple[X, ...]]` will only ever construct
-   `List[X]` because all the others are also represented as JSON lists.
- * `Union[MyClassA, MyClassB, MyClassC]` can be ambiguous if these classes all share
-   common fields. Consider using the `__json_check__` hook to differentiate. Simply
-   adding a field named `class` or something can be unambiguous and fast.
+alternates, but there are some caveats. You should use the `.is_ambiguous()` method of
+RuleSet to warn you of these.
 
 _Rules accept subclasses._ If you subclass `int`, the atoms rule will match it, and then
 the converter will call `int` against your instance. I haven't taken the time to examine
@@ -306,7 +317,7 @@ This package is maintained via the [poetry][] tool. Some useful commands:
 
  1. Setup: `poetry install`
  2. Run tests: `poetry run pytest tests/`
- 3. Reformat: `poetry run black -N json_syntax/ tests/`
+ 3. Reformat: `poetry run black json_syntax/ tests/`
 
 ### Setting up tox
 
@@ -321,6 +332,10 @@ You'll want pyenv, then install the pythons:
     done
 
 Once you install `tox` in your preferred python, running it is just `tox`.
+
+(Caveat: `poetry install` is now breaking in `tox` because `pip` has changed: it now
+tries to create a dist in _pip-wheel-metadata_ each time. I'm nuking that directory, but
+most likely there's some new config variable to hunt down.)
 
 ### Notes
 

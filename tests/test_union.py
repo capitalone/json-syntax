@@ -22,27 +22,41 @@ class Dir(Enum):
     DOWN = 2
 
 
-cases = [
+atoms = [
     (NoneType, None, None),
     (bool, True, True),
+]
+
+nums = [
     (int, 5, 5),
     (float, 3.3, 3.3),
     (Decimal, Decimal("5.5"), Decimal("5.5")),
+]
+
+strings = [
     (str, "str", "str"),
     (date, date(2010, 10, 10), "2010-10-10"),
     (datetime, datetime(2011, 11, 11, 11, 11, 11), "2011-11-11T11:11:11"),
-    (Point, Point(x=4.5, y=6.6), {"x": 4.5, "y": 6.6}),
-    (Dir, Dir.UP, "UP"),
+    (Dir, Dir.UP, "UP")
+]
+
+arrays = [
     (List[Point], [Point(x=4.5, y=6.6)], [{"x": 4.5, "y": 6.6}]),
     (Tuple[Point, ...], (Point(x=4.5, y=6.6),), [{"x": 4.5, "y": 6.6}]),
     (Set[Point], {Point(x=4.5, y=6.6)}, [{"x": 4.5, "y": 6.6}]),
     (FrozenSet[Point], frozenset([Point(x=4.5, y=6.6)]), [{"x": 4.5, "y": 6.6}]),
+]
+
+dicts = [
+    (Point, Point(x=4.5, y=6.6), {"x": 4.5, "y": 6.6}),
     (Dict[Dir, Decimal], {Dir.UP: Decimal("7.7")}, {"UP": Decimal("7.7")}),
     (Dict[str, float], {"a": 2.3, "b": 3.4}, {"a": 2.3, "b": 3.4}),
 ]
 
+cats = [atoms, nums, strings, arrays, dicts]
 
-@pytest.mark.parametrize("typ,py,js", cases)
+
+@pytest.mark.parametrize("typ,py,js", [trip for cat in cats for trip in cat])
 def test_simple(typ, py, js):
     rs = std_ruleset()
     act = rs.lookup(verb=PY2JSON, typ=typ)
@@ -51,35 +65,17 @@ def test_simple(typ, py, js):
     assert act(js) == py
 
 
-def ambiguous(left, right):
-    if left == str and right in {Dir, date, datetime}:
-        return "str prevents {} matching".format(right)
-    if left == date and right == datetime:
-        return "supertype date prevents subtype datetime matching"
-    if left == datetime and right == date:
-        return "dates in iso format are valid datetimes"
-    if left == Dict[str, float] and right == Point:
-        # Note that this is the case where the attrs class has homogenous fields
-        return "dict prevents attrs class matching"
-    ambiguous = {List[Point], Tuple[Point, ...], Set[Point], FrozenSet[Point]}
-    if left in ambiguous and right in ambiguous:
-        return "collections are all represented as json arrays"
-    return
+def _pairs():
+    for i in range(0, len(cats)):
+        lefts = cats[i]
+        rights = cats[(i + 2) % len(cats)]
+        yield from product(lefts, rights)
 
 
 def cvt_map():
-    for left, right in product(cases, cases):
-        if left is right:
-            continue
+    for left, right in _pairs():
         left_type, left_python, left_json = left
         right_type, right_python, right_json = right
-
-        if (
-            left_json == right_json
-            or left_python == right_python
-            or ambiguous(left_type, right_type)
-        ):
-            continue
 
         typ = Union[left_type, right_type]
         yield (PY2JSON, typ, left_python, left_json)
@@ -98,18 +94,9 @@ def test_convert_unions(verb, typ, subj, expect):
 
 
 def check_map():
-    for left, right in product(cases, cases):
-        if left is right:
-            continue
+    for left, right in _pairs():
         left_type, left_python, left_json = left
         right_type, right_python, right_json = right
-
-        if (
-            left_json == right_json
-            or left_python == right_python
-            or ambiguous(left_type, right_type)
-        ):
-            continue
 
         typ = Union[left_type, right_type]
         yield (INSP_PY, typ, left_python)
