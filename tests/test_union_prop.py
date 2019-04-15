@@ -36,7 +36,7 @@ def test_roundtrip_union_simple(pair):
     json_value = act(py_value)
     act2 = rs.lookup(verb=JSON2PY, typ=typ)
     rt_py_value = act2(json_value)
-    if not rs.is_ambiguous(typ=typ, threshold=Matches.sometimes):
+    if not rs.is_ambiguous(typ=typ, threshold=Matches.potential):
         assert py_value == rt_py_value
 
 
@@ -49,5 +49,5 @@ def test_roundtrip_arbitrary_complex(pair):
     json_value = act(py_value)
     act2 = rs.lookup(verb=JSON2PY, typ=typ)
     rt_py_value = act2(json_value)
-    if not rs.is_ambiguous(typ=typ, threshold=Matches.sometimes):
+    if not rs.is_ambiguous(typ=typ, threshold=Matches.potential):
         assert py_value == rt_py_value
