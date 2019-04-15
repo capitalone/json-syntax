@@ -55,13 +55,13 @@ class RuleSet:
             self.cache.de_flight(verb=verb, typ=typ, forward=forward)
 
         if action is None and not accept_missing:
-            raise ValueError("Failed: lookup({!s}, {!r}".format(verb, typ))
+            raise TypeError("Failed: lookup({!s}, {!r})".format(verb, typ))
 
     def fallback(self, verb, typ):
         if verb == PATTERN:
             return pattern.Unknown
         else:
-            return None
+            raise TypeError("Failed: lookup({!s}, {!r}); no fallback provided".format(verb, typ))
 
     def is_ambiguous(self, typ, threshold=pattern.Matches.always):
         pat = self.lookup(verb=PATTERN, typ=typ)

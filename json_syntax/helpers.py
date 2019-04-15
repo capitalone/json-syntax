@@ -27,8 +27,8 @@ def has_origin(typ, origin, num_args=None):
     The typing classes use dunder properties such that ``__origin__`` is the generic
     class and ``__args__`` are the type arguments.
 
-    Note: in python3.6, the ``__origin__`` attribute changed to reflect native types.
-    This call attempts to work around that so that python3.5 "just works."
+    Note: in python3.7, the ``__origin__`` attribute changed to reflect native types.
+    This call attempts to work around that so that 3.5 and 3.6 "just work."
     """
     t_origin = get_origin(typ)
     if not isinstance(origin, tuple):
@@ -180,9 +180,6 @@ def is_attrs_field_required(field):
 
 def _add_context(context, exc):
     try:
-        if exc is None:
-            return
-
         args = list(exc.args)
         arg_num, point = getattr(exc, "_context", (None, None))
 
@@ -242,7 +239,8 @@ class ErrorContext:
         pass
 
     def __exit__(self, exc_type, exc_value, traceback):
-        _add_context(self.context, exc_value)
+        if exc_value is not None:
+            _add_context(self.context, exc_value)
 
 
 def err_ctx(context, func):

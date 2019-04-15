@@ -31,24 +31,29 @@ may change.
 
 ### Supported types
 
- * Atoms including `None`, `bool`, `int`, `float`, `str`
- * The `decimal.Decimal` class, represented as itself and in string form.
+ * Atoms including `None`, `bool`, `int`, `float`, `str`.
+    * Floats may optionally be represented as strings.
+ * The `decimal.Decimal` class, represented as itself or in string form.
  * The `datetime.date` and `datetime.datetime` classes, represented in ISO8601 form.
+ * Preliminary support for `datetime.timedelta` as ISO8601 time durations.
  * Subclasses of `enum.Enum`, represented by the string names.
     * Also, a `faux_enums` rule will accept an Enum type if you just use strings in your
       code.
  * The `typing.Optional[E]` type allows a JSON `null` to be substituted for a value.
  * Collections including `typing.List[E]`, `typing.Tuple[E, ...]`, `typing.Set[E]` and
    `typing.FrozenSet[E]`.
-    * The ellipsis is part of the syntax! It indicates a homogenous tuple, essentially a
+    * The `...` is [literal][ellipsis] and indicates a homogenous tuple, essentially a
       frozen list.
  * The `typing.Dict[K, V]` type allows a JSON object to represent a homogenous `dict`.
     * Restriction: the keys must be strings, ints, enums or dates.
  * Python classes implemented using `attrs.attrs`, `dataclasses.dataclass` are
    represented as JSON dicts and
  * Named tuples via `typing.NamedTuple` and heterogenous tuples via `typing.Tuple`.
-    * Really, you probably want to convert these to `attrs.`
+    * Though, you should consider converting these to `dataclass`.
  * The `typing.Union[A, B, C]` rule will recognize alternate types by inspection.
+
+In addition, `dataclass` and `attrs` classes support hooks to let you completely customize
+their JSON representation.
 
 ## Usage
 
@@ -151,11 +156,11 @@ Thus we have:
  * `dict` and `Dict[K, V]`
 
 Tuple is a special case. In Python, they're often used to mean "frozenlist", so
-`Tuple[E, ...]` (the `...` is the actual syntax!) indicates all elements have the type
+`Tuple[E, ...]` (the `...` is [the Ellipsis object][ellipsis]) indicates all elements have the type
 `E`.
 
 They're also used to represent an unnamed record. In this case, you can use
-`Tuple[A, B, C, D]` or however many types. But don't do that, just make a `dataclass`.
+`Tuple[A, B, C, D]` or however many types. It's generally better to use a `dataclass`.
 
 The standard rules don't support:
 
@@ -299,17 +304,18 @@ _Union types._ You can use `typing.Union` to allow a member to be one of some nu
 alternates, but there are some caveats. You should use the `.is_ambiguous()` method of
 RuleSet to warn you of these.
 
-_Rules accept subclasses._ If you subclass `int`, the atoms rule will match it, and then
-the converter will call `int` against your instance. I haven't taken the time to examine
-what exactly to do.
+_Atom rules accept specific types._ At present, the rules for atomic types (`int`,
+ `str`, `bool`, `date`, `float`, `Decimal`) must be declared as exactly those types. With
+multiple inheritance, it's not clear which rule should apply
 
 _Checks are stricter than converters._ For example, a check for `int` will check whether
 the value is an integer, whereas the converter simply calls `int` on it. Thus there are
-many inputs for where `MyType` would pass but `Union[MyType, Dummy]` will fail. (Note
+inputs for where `MyType` would pass but `Union[MyType, Dummy]` will fail. (Note
 that `Optional` is special cased to look for `None` and doesn't have this problem.)
 
 _Numbers are hard._ See the rules named `floats`, `floats_nan_str`, `decimals`,
-`decimals_as_str` for details on how to get numbers to transmit reliably.
+`decimals_as_str` for details on how to get numbers to transmit reliably. There is no rule for
+fractions or complex numbers as there's no canonical way to transmit them via JSON.
 
 ## Maintenance
 
@@ -360,3 +366,4 @@ union. [↩](#a2)
 [attrs]: https://attrs.readthedocs.io/en/stable/
 [dataclasses]: https://docs.python.org/3/library/dataclasses.html
 [sharp]: https://github.com/UnitedIncome/json-syntax/blob/master/README.md#sharp-edges
+[ellipsis]: https://docs.python.org/3/library/stdtypes.html#the-ellipsis-object

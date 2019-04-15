@@ -55,16 +55,12 @@ def atoms(verb, typ, ctx):
         if verb in (JSON2PY, PY2JSON):
             if typ is NoneType:
                 return convert_none
-            for base in (str, bool, int):
-                if issubclass(typ, base):
+            for base in (str, bool, int):  # n.b. bool is a subclass of int.
+                if typ == base:
                     return base
-        elif verb == INSP_PY:
+        elif verb in (INSP_PY, INSP_JSON):
             for base in (NoneType, str, bool, int):
-                if issubclass(typ, base):
-                    return partial(check_isinst, typ=base)
-        elif verb == INSP_JSON:
-            for base in (NoneType, str, bool, int):
-                if issubclass(typ, base):
+                if typ == base:
                     return partial(check_isinst, typ=base)
         elif verb == PATTERN:
             for base, node in [
@@ -73,7 +69,7 @@ def atoms(verb, typ, ctx):
                 (bool, pat.Bool),
                 (int, pat.Number),
             ]:
-                if issubclass(typ, base):
+                if typ == base:
                     return node
 
 
@@ -89,7 +85,7 @@ def floats(verb, typ, ctx):
     This rule simply treats them as regular float values. If you want to catch them, you can set ``allow_nan=False``
     in ``json.dump()``.
     """
-    if issub_safe(typ, float):
+    if typ == float:
         if verb in (JSON2PY, PY2JSON):
             return float
         elif verb == INSP_PY:
@@ -108,7 +104,7 @@ def floats_nan_str(verb, typ, ctx):
 
     This rule converts special constants to string names.
     """
-    if issub_safe(typ, float):
+    if typ == float:
         if verb == JSON2PY:
             return float
         elif verb == PY2JSON:
@@ -131,7 +127,7 @@ def decimals(verb, typ, ctx):
 
     This rule will fail if passed a special constant.
     """
-    if issub_safe(typ, Decimal):
+    if typ == Decimal:
         if verb in (JSON2PY, PY2JSON):
             return Decimal
         elif verb in (INSP_JSON, INSP_PY):
@@ -148,7 +144,7 @@ def decimals_as_str(verb, typ, ctx):
 
     This rule will fail if passed a special constant.
     """
-    if issub_safe(typ, Decimal):
+    if typ == Decimal:
         if verb == JSON2PY:
             return Decimal
         elif verb == PY2JSON:
@@ -298,7 +294,7 @@ def _stringly(verb, typ, ctx):
     This is used internally by dicts.
     """
     for base in str, int:
-        if issubclass(typ, base):
+        if typ == base:
             if verb == PATTERN and base == str:
                 return pat.String.any
             if verb in (JSON2PY, PY2JSON):
@@ -308,7 +304,7 @@ def _stringly(verb, typ, ctx):
             elif verb in (INSP_JSON, PATTERN):
                 inspect = partial(check_parse_error, parser=base, error=ValueError)
                 return pat.String(typ.__name__, inspect) if verb == PATTERN else inspect
-    if issubclass(typ, (datetime, time)):
+    if typ in (datetime, time):
         return
     for rule in enums, iso_dates:
         action = rule(verb=verb, typ=typ, ctx=ctx)

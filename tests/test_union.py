@@ -22,22 +22,15 @@ class Dir(Enum):
     DOWN = 2
 
 
-atoms = [
-    (NoneType, None, None),
-    (bool, True, True),
-]
+atoms = [(NoneType, None, None), (bool, True, True)]
 
-nums = [
-    (int, 5, 5),
-    (float, 3.3, 3.3),
-    (Decimal, Decimal("5.5"), Decimal("5.5")),
-]
+nums = [(int, 5, 5), (float, 3.3, 3.3), (Decimal, Decimal("5.5"), Decimal("5.5"))]
 
 strings = [
     (str, "str", "str"),
     (date, date(2010, 10, 10), "2010-10-10"),
     (datetime, datetime(2011, 11, 11, 11, 11, 11), "2011-11-11T11:11:11"),
-    (Dir, Dir.UP, "UP")
+    (Dir, Dir.UP, "UP"),
 ]
 
 arrays = [
