@@ -30,6 +30,7 @@ class SimpleRuleSet:
     The keyword argument `cache` can specify a custom rule cache. `json_syntax.cache.ThreadLocalCache`
     may be helpful if you are loading rules in a multi-threaded environment.
     """
+
     def __init__(self, *rules, cache=None):
         self.rules = rules
         self.cache = cache or SimpleCache()
@@ -85,6 +86,7 @@ class RuleSet(SimpleRuleSet):
     The most important methods are generally `json_to_python` and `python_to_json`; these take a
     fully specified type and produce an encoder and decoder respectively.
     """
+
     def json_to_python(self, typ):
         """
         Constructs a function to decode JSON objects (dict, list, str, float, etc.) into
