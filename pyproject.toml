@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "json-syntax"
-version = "0.3"
+version = "1.0"
 description = "Generates functions to convert Python classes to JSON dumpable objects."
 authors = ["Ben Samuel <bsamuel@unitedincome.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/UnitedIncome/json-syntax"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries"
 ]

@@ -26,9 +26,6 @@ structure using libraries like [attrs][].
  * The library has no dependencies of its own
     * It does not actually read or write JSON
 
-At the time of writing, the library is in **beta** and the API is relatively stable but
-may change.
-
 ### Supported types
 
  * Atoms including `None`, `bool`, `int`, `float`, `str`.
@@ -90,8 +87,8 @@ represent them in JSON as strings.
 
 ```python
 >>> rules = syn.std_ruleset(decimals=syn.decimals_as_str)
->>> encode_account = rules.lookup(typ=Account, verb='python_to_json')
->>> decode_account = rules.lookup(typ=Account, verb='json_to_python')
+>>> encode_account = rules.python_to_json(typ=Account)
+>>> decode_account = rules.json_to_python(typ=Account)
 ```
 
 The RuleSet examines the type and verb, searches its list of Rules, and then uses the
@@ -128,7 +125,7 @@ them, and constructs an action to represent them.
 }
 ```
 
-#### Actual usage
+#### Encoding and decoding
 
 The aim of all this is to enable reliable usage with your preferred JSON library:
 
@@ -252,7 +249,22 @@ encode_account = rules.lookup(typ=Union[AccountA, AccountB, AccountC],
 
 ### Adding custom rules
 
-See [the examples][] for details on custom rules.
+See [the examples][] for details on custom rules, but generally a rule is just a
+function. Say, for instance, your type has class methods that encode and decode, this
+would be sufficient for many cases:
+
+```python
+def my_rule(verb, typ, ctx):
+    if issubclass(typ, MyType):
+        if verb == 'json_to_python':
+            return typ.decoder
+        elif verb == 'python_to_json':
+            return typ.encoder
+```
+
+If your rule needs an encoder or decoder for a standard type, it can call
+`ctx.lookup(verb=verb, typ=subtype)`. The helper functions defined in `json_syntax.action_v1`
+are intended to stay the same so that custom rules can reuse them.
 
 ### Debugging amibguous structures
 
@@ -285,9 +297,6 @@ print(rules.lookup(typ=MyAmbiguousClass, verb='show_pattern'))
 ```
 
 ### Sharp edges
-
-_Beta release status._ This API may change, there are probably bugs! In particular, the
-status of rules accepting subclasses is likely to change.
 
 _The RuleSet caches encoders._ Construct a new ruleset if you want to change settings.
 

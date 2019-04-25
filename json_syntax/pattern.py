@@ -25,12 +25,25 @@ dumps = partial(json.dumps, **_args)
 class Matches(IntEnum):
     """
     This determines the degree to which one pattern can shadow another causing potential ambiguity.
+
+    Meaning:
+
+      * always: The pattern always shadows the other pattern.
+      * sometimes: The pattern is known to sometimes shadow another pattern.
+      * potential: It's not possible to prove the pattern won't shadow the other pattern.
+      * never: The pattern will never shadow the other pattern.
+
+    In determining ambiguity, a `sometimes` threshold is often permissible. For example, if you have
+    `Union[date, str]` then properly formatted dates will sometimes shadow strings. That's probably okay
+    if you want special handling for dates.
+
+    But in `Union[str, date]`, the `str` will always match and thus no dates will ever be recognized.
     """
 
-    always = 0  # Will always match
-    sometimes = 1  # It will sometimes match
-    potential = 2  # Can't prove it won't match
-    never = 3  # Provably won't match
+    always = 0
+    sometimes = 1
+    potential = 2
+    never = 3
 
 
 matches_all = partial(max, default=Matches.always)
@@ -38,6 +51,11 @@ matches_any = partial(min, default=Matches.never)
 
 
 def matches(left, right, ctx=None):
+    """
+    Given two `Pattern` objects, determine if the `left` pattern shadows the `right`.
+
+    Returns a `Matches` instance.
+    """
     if ctx is None:
         ctx = set()
     else:
@@ -257,6 +275,14 @@ class Object(Pattern):
 
 @singledispatch
 def is_ambiguous(pattern, threshold=Matches.always, _path=()):
+    """
+    Attempts to determine if alternatives within a pattern create ambiguities given
+    a threshold. The `json_syntax.RuleSet.is_ambiguous` constructs the `Pattern` instances
+    and calls this for you, though.
+
+    If an ambiguity is found, this attempts to identify the path within the pattern to
+    find it. (This feature isn't well tested, though.)
+    """
     raise TypeError("pattern must be a recognized subclass of Pattern.")
 
 
