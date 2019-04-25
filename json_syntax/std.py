@@ -77,8 +77,8 @@ def floats(verb, typ, ctx):
     """
     Rule to handle floats passing NaNs through unaltered.
 
-    JSON technically recognizes integers and floats. Many JSON generators will represent floats with integral value as integers.
-    Thus, this rule will convert both integers and floats in JSON to floats in Python.
+    JSON technically recognizes integers and floats. Many JSON generators will represent floats with integral value as
+    integers. Thus, this rule will convert both integers and floats in JSON to floats in Python.
 
     Python's standard JSON libraries treat `nan` and `inf` as special constants, but this is not standard JSON.
 
@@ -123,7 +123,8 @@ def decimals(verb, typ, ctx):
 
     This rule requires that your JSON library has decimal support, e.g. simplejson.
 
-    Other JSON processors may convert values to and from floating-point; if that's a concern, consider `decimals_as_str`.
+    Other JSON processors may convert values to and from floating-point; if that's a concern, consider
+    `decimals_as_str`.
 
     This rule will fail if passed a special constant.
     """
