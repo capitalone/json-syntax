@@ -348,10 +348,6 @@ You'll want pyenv, then install the pythons:
 
 Once you install `tox` in your preferred python, running it is just `tox`.
 
-(Caveat: `poetry install` is now breaking in `tox` because `pip` has changed: it now
-tries to create a dist in _pip-wheel-metadata_ each time. I'm nuking that directory, but
-most likely there's some new config variable to hunt down.)
-
 ### Notes
 
 <b id="f1">1</b>: Writing the encoder is deceptively easy because the instances in
