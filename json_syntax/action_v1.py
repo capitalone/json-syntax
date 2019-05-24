@@ -61,12 +61,22 @@ def convert_none(value):
     return None
 
 
-def check_str_enum(value, mapping):
-    return isinstance(value, str) and value in mapping
+def check_str_enum(value, typ):
+    try:
+        typ[value]
+    except (KeyError, TypeError):
+        return False
+    else:
+        return True
 
 
-def convert_str_enum(value, mapping):
-    return mapping[value]
+def convert_str_enum(value, typ):
+    return typ[value]
+
+
+def pass_faux_enum(value, typ):
+    typ[value]
+    return value
 
 
 if hasattr(datetime, "fromisoformat"):

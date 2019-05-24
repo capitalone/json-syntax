@@ -31,6 +31,7 @@ from .action_v1 import (
     convert_str_timedelta,
     convert_time,
     convert_timedelta_str,
+    pass_faux_enum,
 )
 from . import pattern as pat
 
@@ -197,11 +198,11 @@ def enums(verb, typ, ctx):
         if verb == PY2JSON:
             return partial(convert_enum_str, typ=typ)
         elif verb == JSON2PY:
-            return partial(convert_str_enum, mapping=dict(typ.__members__))
+            return partial(convert_str_enum, typ=typ)
         elif verb == INSP_PY:
             return partial(check_isinst, typ=typ)
         elif verb in (INSP_JSON, PATTERN):
-            inspect = partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
+            inspect = partial(check_str_enum, typ=typ)
             return pat.String(typ.__name__, inspect) if verb == PATTERN else inspect
 
 
@@ -209,10 +210,9 @@ def faux_enums(verb, typ, ctx):
     "Rule to fake an Enum by actually using strings."
     if issub_safe(typ, Enum):
         if verb in (JSON2PY, PY2JSON):
-            mapping = {name: name for name in typ.__members__}
-            return partial(convert_str_enum, mapping=mapping)
+            return partial(pass_faux_enum, typ=typ)
         elif verb in (INSP_JSON, INSP_PY, PATTERN):
-            inspect = partial(check_str_enum, mapping=frozenset(typ.__members__.keys()))
+            inspect = partial(check_str_enum, typ=typ)
             return pat.String(typ.__name__, inspect) if verb == PATTERN else inspect
 
 
