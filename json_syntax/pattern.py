@@ -2,8 +2,10 @@
 Patterns to represent roughly what syntax will look like, and also to investigate whether
 unions are potentially ambiguous.
 """
-from functools import partial, lru_cache, singledispatch
-from itertools import chain, cycle, islice, product, zip_longest
+# pyre-strict
+
+from functools import partial, singledispatch
+from itertools import cycle, islice, product, zip_longest
 from enum import IntEnum
 
 try:
@@ -107,6 +109,8 @@ class String(Pattern):
     def __init__(self, name, arg=None):
         self.name = name
         self.arg = arg
+
+    any: "String"
 
     def for_json(self):
         if self.name == "exact":

@@ -1,3 +1,5 @@
+# pyre-strict
+
 from .helpers import (
     JSON2PY,
     PY2JSON,
@@ -70,7 +72,7 @@ def attrs_classes(
 
     inner_map = []
     for field in fields:
-        if field.init or verb == PY2JSON:
+        if field.init:
             tup = (
                 field.name,
                 ctx.lookup(

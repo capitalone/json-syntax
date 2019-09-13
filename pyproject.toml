@@ -22,6 +22,7 @@ attrs = "^18.2"
 pytest-cov = "^2.6"
 black = {version = "^19.3-beta.0",allows-prereleases = true,python = ">=3.7"}
 hypothesis = "^4.14"
+pyre-check = "^0.0.30"
 
 [tool.black]
 line-length = 88

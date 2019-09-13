@@ -37,7 +37,7 @@ def test_issub_safe_normal_type():
     assert not hlp.issub_safe(int, str)
 
 
-def test_issub_safe_normal_type():
+def test_issub_safe_normal_type_2():
     "Test that issub_safe returns False for generic types."
 
     assert not hlp.issub_safe(t.List[int], list)

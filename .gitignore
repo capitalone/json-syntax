@@ -1,11 +1,12 @@
+.tox/
 /*.egg-info
-/build/
-/dist/
-/.python-version
 /.coverage
 /.hypothesis
+/.pyre
+/.python-version
+/build/
+/dist/
 /htmlcov
 /pip-wheel-metadata
-setup.py
 requirements.txt
-.tox/
+setup.py

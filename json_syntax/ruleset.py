@@ -1,3 +1,5 @@
+# pyre-strict
+
 from .cache import SimpleCache
 from .helpers import JSON2PY, PY2JSON, INSP_JSON, INSP_PY, PATTERN
 from . import pattern

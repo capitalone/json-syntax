@@ -1,3 +1,5 @@
+# pyre-strict
+
 from warnings import warn
 import threading
 

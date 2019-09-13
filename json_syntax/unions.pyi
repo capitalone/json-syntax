@@ -1,0 +1,3 @@
+from typing import Any, Type
+
+def unions(verb, typ: Type[Any], ctx) -> Any: ...

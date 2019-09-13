@@ -1,8 +1,7 @@
 import attr
-from collections import namedtuple
 from typing import NamedTuple
 
-from tests.types_attrs_noann import *
+from tests.types_attrs_noann import flat_types, Hooks, hook_types
 
 try:
     from dataclasses import dataclass
