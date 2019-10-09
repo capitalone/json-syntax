@@ -43,6 +43,8 @@ structure using libraries like [attrs][].
       frozen list.
  * The `typing.Dict[K, V]` type allows a JSON object to represent a homogenous `dict`.
     * Restriction: the keys must be strings, ints, enums or dates.
+ * **New**: The `typing.TypedDict` type allows a JSON object to represent a `dict` with specific
+   keys.
  * Python classes implemented using `attrs.attrs`, `dataclasses.dataclass` are
    represented as JSON dicts and
  * Named tuples via `typing.NamedTuple` and heterogenous tuples via `typing.Tuple`.
@@ -51,6 +53,17 @@ structure using libraries like [attrs][].
 
 In addition, `dataclass` and `attrs` classes support hooks to let you completely customize
 their JSON representation.
+
+### Extras
+
+These were originally intended as examples for how to use the package, but they're potentially
+useful in their own right.
+
+ * A ruleset for use with AWS DynamoDB is included with basic facilities.
+   * Restriction: No general support for `typing.Union`, only `Optional`.
+   * Restriction: No general support for `Set`, only the special cases that are native to DynamoDB.
+ * A `Flag` psuedo-type allows you to use regular strings directly as flags.
+ * A rule that will accept a complete `datetime` and return a `date` by truncating the timestamp.
 
 ## Usage
 
