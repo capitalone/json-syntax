@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "json-syntax"
-version = "1.0.1"
+version = "2.0.0-alpha.0"
 description = "Generates functions to convert Python classes to JSON dumpable objects."
 authors = ["Ben Samuel <bsamuel@unitedincome.com>"]
 license = "MIT"
@@ -37,8 +37,6 @@ skipsdist = true
 [testenv]
 deps =
     poetry
-whitelist_externals =
-    /bin/rm
 commands =
     poetry install
     poetry run pytest {posargs}

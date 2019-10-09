@@ -1,16 +1,4 @@
-from .helpers import (
-    JSON2PY,
-    PY2JSON,
-    INSP_JSON,
-    INSP_PY,
-    PATTERN,
-    SENTINEL,
-    has_origin,
-    identity,
-    is_attrs_field_required,
-    issub_safe,
-    resolve_fwd_ref,
-)
+from .helpers import JSON2PY, PY2JSON, INSP_JSON, INSP_PY, PATTERN, has_origin, identity
 from .action_v1 import (
     check_dict,
     check_isinst,
@@ -20,8 +8,11 @@ from .action_v1 import (
     convert_tuple_as_list,
 )
 from . import pattern as pat
+from .product import build_attribute_map, build_named_tuple_map, build_typed_dict_map
 
 from functools import partial
+
+_SUPPORTED_VERBS = (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN)
 
 
 def attrs_classes(
@@ -53,49 +44,26 @@ def attrs_classes(
     `__json_check__` may be used to completely override the `inspect_json` check generated
     for this class.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN):
+    if verb not in _SUPPORTED_VERBS:
         return
-    try:
-        fields = typ.__attrs_attrs__
-    except AttributeError:
-        try:
-            fields = typ.__dataclass_fields__
-        except AttributeError:
-            return
-        else:
-            fields = fields.values()
+    inner_map = build_attribute_map(verb, typ, ctx, read_all=verb == PY2JSON)
+    if inner_map is None:
+        return
 
     if verb == INSP_PY:
         return partial(check_isinst, typ=typ)
-
-    inner_map = []
-    for field in fields:
-        if field.init or verb == PY2JSON:
-            tup = (
-                field.name,
-                ctx.lookup(
-                    verb=verb, typ=resolve_fwd_ref(field.type, typ), accept_missing=True
-                ),
-            )
-            if verb == PY2JSON:
-                tup += (field.default,)
-            elif verb in (INSP_JSON, PATTERN):
-                tup += (is_attrs_field_required(field),)
-            inner_map.append(tup)
 
     if verb == JSON2PY:
         pre_hook_method = getattr(typ, pre_hook, identity)
         return partial(
             convert_dict_to_attrs,
             pre_hook=pre_hook_method,
-            inner_map=tuple(inner_map),
+            inner_map=inner_map,
             con=typ,
         )
     elif verb == PY2JSON:
         post_hook = post_hook if hasattr(typ, post_hook) else None
-        return partial(
-            convert_attrs_to_dict, post_hook=post_hook, inner_map=tuple(inner_map)
-        )
+        return partial(convert_attrs_to_dict, post_hook=post_hook, inner_map=inner_map)
     elif verb == INSP_JSON:
         check = getattr(typ, check, None)
         if check:
@@ -104,9 +72,26 @@ def attrs_classes(
         return partial(check_dict, inner_map=inner_map, pre_hook=pre_hook_method)
     elif verb == PATTERN:
         return pat.Object.exact(
-            (pat.String.exact(name), inner or pat.Unkown)
-            for name, inner, req in inner_map
-            if req
+            (pat.String.exact(attr.name), attr.inner or pat.Unkown)
+            for attr in inner_map
+            if attr.is_required
+        )
+
+
+def _simple_product(inner_map, verb, typ, ctx):
+    if verb == JSON2PY:
+        return partial(
+            convert_dict_to_attrs, pre_hook=identity, inner_map=inner_map, con=typ
+        )
+    elif verb == PY2JSON:
+        return partial(convert_attrs_to_dict, post_hook=None, inner_map=inner_map)
+    elif verb == INSP_JSON:
+        return partial(check_dict, pre_hook=identity, inner_map=inner_map)
+    elif verb == PATTERN:
+        return pat.Object.exact(
+            (pat.String.exact(attr.name), attr.inner)
+            for attr in inner_map
+            if attr.is_required
         )
 
 
@@ -115,67 +100,53 @@ def named_tuples(verb, typ, ctx):
     Handle a ``NamedTuple(name, [('field', type), ('field', type)])`` type.
 
     Also handles a ``collections.namedtuple`` if you have a fallback handler.
+
+    Warning: there's no clear runtime marker that something is a namedtuple; it's just
+    a subclass of ``tuple`` that has some special fields.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN) or not issub_safe(
-        typ, tuple
-    ):
+    if verb not in _SUPPORTED_VERBS:
         return
-    try:
-        fields = typ._field_types
-    except AttributeError:
-        try:
-            fields = typ._fields
-        except AttributeError:
-            return
-        fields = [(name, None) for name in fields]
-    else:
-        fields = fields.items()
+
+    inner_map = build_named_tuple_map(verb, typ, ctx)
+    if inner_map is None:
+        return
+
     if verb == INSP_PY:
         return partial(check_isinst, typ=typ)
 
-    defaults = {}
-    defaults.update(getattr(typ, "_fields_defaults", ()))
-    defaults.update(getattr(typ, "_field_defaults", ()))
-    inner_map = []
-    for name, inner in fields:
-        tup = (
-            name,
-            ctx.lookup(verb=verb, typ=resolve_fwd_ref(inner, typ), accept_missing=True),
-        )
-        if verb == PY2JSON:
-            tup += (defaults.get(name, SENTINEL),)
-        elif verb in (INSP_JSON, PATTERN):
-            tup += (name not in defaults,)
-        inner_map.append(tup)
+    return _simple_product(inner_map, verb, typ, ctx)
 
-    if verb == JSON2PY:
-        return partial(
-            convert_dict_to_attrs,
-            pre_hook=identity,
-            inner_map=tuple(inner_map),
-            con=typ,
-        )
-    elif verb == PY2JSON:
-        return partial(
-            convert_attrs_to_dict, post_hook=None, inner_map=tuple(inner_map)
-        )
-    elif verb == INSP_JSON:
-        return partial(check_dict, pre_hook=identity, inner_map=tuple(inner_map))
-    elif verb == PATTERN:
-        return pat.Object.exact(
-            (pat.String.exact(name), inner) for name, inner, req in inner_map if req
-        )
+
+def typed_dicts(verb, typ, ctx):
+    """
+    Handle the TypedDict product type. This allows you to construct a dict with specific (string) keys, which
+    is often how people really use dicts.
+
+    Both the class form and the functional form, ``TypedDict('Name', {'field': type, 'field': type})`` are
+    supported.
+    """
+    if verb not in _SUPPORTED_VERBS:
+        return
+
+    inner_map = build_typed_dict_map(verb, typ, ctx)
+    if inner_map is None:
+        return
+
+    if verb == INSP_PY:
+        return partial(check_dict, inner_map=inner_map, pre_hook=identity)
+
+    # Note: we pass `dict` as the typ here because it's the correct constructor.
+    return _simple_product(inner_map, verb, dict, ctx)
 
 
 def tuples(verb, typ, ctx):
     """
     Handle a ``Tuple[type, type, type]`` product type. Use a ``NamedTuple`` if you don't
-    want a list.
+    want a list. Though, if possible, prefer ``attrs`` or ``dataclass``.
     """
-    if verb not in (JSON2PY, PY2JSON, INSP_PY, INSP_JSON, PATTERN) or not has_origin(
-        typ, tuple
-    ):
+    if verb not in _SUPPORTED_VERBS or not has_origin(typ, tuple):
         return
+
     args = typ.__args__
     if Ellipsis in args:
         # This is a homogeneous tuple, use the lists rule.

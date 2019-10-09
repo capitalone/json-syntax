@@ -279,7 +279,7 @@ def test_iso_dates_disregard():
 
 
 def test_iso_dates():
-    "Test the iso_dates rule will generate encoders and decoders for dates using ISO8601, rejecting datetimes as input to dates."
+    "Test the iso_dates rule handles dates using ISO8601, rejecting datetimes as input to dates."
 
     decoder = std.iso_dates(verb=JSON2PY, typ=date, ctx=Fail())
     assert decoder("1776-07-04") == date(1776, 7, 4)

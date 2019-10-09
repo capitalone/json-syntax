@@ -249,7 +249,7 @@ encode_account = rules.lookup(typ=Union[AccountA, AccountB, AccountC],
 
 ### Adding custom rules
 
-See [the examples][] for details on custom rules, but generally a rule is just a
+See [the extras][] for details on custom rules, but generally a rule is just a
 function. Say, for instance, your type has class methods that encode and decode, this
 would be sufficient for many cases:
 
@@ -365,7 +365,7 @@ union. [↩](#a2)
 
 [poetry]: https://poetry.eustace.io/docs/#installation
 [gradual typing]: https://www.python.org/dev/peps/pep-0483/#summary-of-gradual-typing
-[the examples]: https://github.com/UnitedIncome/json-syntax/tree/master/json_syntax/examples
+[the extras]: https://github.com/UnitedIncome/json-syntax/tree/master/json_syntax/extras
 [typing]: https://docs.python.org/3/library/typing.html
 [types]: https://github.com/UnitedIncome/json-syntax/blob/master/TYPES.md
 [attrs]: https://attrs.readthedocs.io/en/stable/

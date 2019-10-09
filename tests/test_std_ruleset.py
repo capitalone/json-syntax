@@ -2,8 +2,6 @@ import pytest
 
 from datetime import date
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, List
 import json_syntax as syn
 
 try:

@@ -1,17 +1,16 @@
-import pytest
-from hypothesis import given, settings, HealthCheck, reproduce_failure
+from hypothesis import given, settings, HealthCheck
 
 from . import type_strategies as ts
 
-import attr
-from datetime import date, datetime
-from decimal import Decimal
-from enum import Enum
-from itertools import product
-from typing import Union, List, Tuple, Set, FrozenSet, Dict
+# import attr
+# from datetime import date, datetime
+# from decimal import Decimal
+# from enum import Enum
+# from itertools import product
+# from typing import Union, List, Tuple, Set, FrozenSet, Dict
 
 from json_syntax import std_ruleset
-from json_syntax.helpers import PY2JSON, JSON2PY, INSP_PY, INSP_JSON, NoneType
+from json_syntax.helpers import PY2JSON, JSON2PY  # INSP_PY, INSP_JSON, NoneType
 from json_syntax.pattern import Matches
 
 

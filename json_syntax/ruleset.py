@@ -22,13 +22,13 @@ class SimpleRuleSet:
     """
     This is the base of RuleSet and doesn't know anything about the standard verbs.
 
-    A ruleset contains a series of rules that will be evaluated, in order, against types to attempt
-    to construct encoders and decoders.
+    A ruleset contains a series of rules that will be evaluated, in order, against types to attempt to construct
+    encoders and decoders.
 
     It takes a list of rules; functions that accept a verb and type and return actions.
 
-    The keyword argument `cache` can specify a custom rule cache. `json_syntax.cache.ThreadLocalCache`
-    may be helpful if you are loading rules in a multi-threaded environment.
+    The keyword argument `cache` can specify a custom rule cache. `json_syntax.cache.ThreadLocalCache` may be helpful
+    if you are loading rules in a multi-threaded environment.
     """
 
     def __init__(self, *rules, cache=None):
@@ -42,29 +42,30 @@ class SimpleRuleSet:
                 raise TypeError("Attempted to find {} for 'None'".format(verb))
             return self.fallback(verb=verb, typ=typ)
 
-        action = self.cache.get(verb=verb, typ=typ)
-        if action is not None:
-            trace("lookup({!s}, {!r}): cached", verb, typ)
-            return action
-
-        forward = self.cache.in_flight(verb=verb, typ=typ)
-
-        try:
-            for rule in self.rules:
-                action = rule(verb=verb, typ=typ, ctx=self)
-                if action is not None:
-                    self.cache.complete(verb=verb, typ=typ, action=action)
-                    trace("lookup({!s}, {!r}): computed", verb, typ)
-                    return action
-
-            trace("lookup({!s}, {!r}): fallback", verb, typ)
-            action = self.fallback(verb=verb, typ=typ)
+        with self.cache.access() as cache:
+            action = cache.get(verb=verb, typ=typ)
             if action is not None:
-                self.cache.complete(verb=verb, typ=typ, action=action)
-                trace("lookup({!s}, {!r}): computed by fallback", verb, typ)
+                trace("lookup({!s}, {!r}): cached", verb, typ)
                 return action
-        finally:
-            self.cache.de_flight(verb=verb, typ=typ, forward=forward)
+
+            forward = cache.in_flight(verb=verb, typ=typ)
+
+            try:
+                for rule in self.rules:
+                    action = rule(verb=verb, typ=typ, ctx=self)
+                    if action is not None:
+                        cache.complete(verb=verb, typ=typ, action=action)
+                        trace("lookup({!s}, {!r}): computed", verb, typ)
+                        return action
+
+                trace("lookup({!s}, {!r}): fallback", verb, typ)
+                action = self.fallback(verb=verb, typ=typ)
+                if action is not None:
+                    cache.complete(verb=verb, typ=typ, action=action)
+                    trace("lookup({!s}, {!r}): computed by fallback", verb, typ)
+                    return action
+            finally:
+                cache.de_flight(verb=verb, typ=typ, forward=forward)
 
         if action is None and not accept_missing:
             raise TypeError("Failed: lookup({!s}, {!r})".format(verb, typ))
