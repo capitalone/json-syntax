@@ -5,7 +5,7 @@ from json_syntax.helpers import NoneType
 
 from fractions import Fraction
 from decimal import Decimal
-from typing import List, Set
+from typing import List, Set, Optional
 
 try:
     import attr
@@ -21,9 +21,11 @@ def decode(value, typ):
     return dynamodb_ruleset().dynamodb_to_python(typ)(value)
 
 
-def test_null():
-    assert encode(None, NoneType) == {"NULL": True}
-    assert decode({"NULL": True}, NoneType) is None
+def test_optional():
+    assert encode(None, Optional[int]) == {"NULL": True}
+    assert encode(5, Optional[int]) == {"N": "5"}
+    assert decode({"NULL": True}, Optional[str]) is None
+    assert decode({"S": "wat"}, Optional[str]) == "wat"
 
 
 def test_bool():

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "json-syntax"
-version = "2.0.0-alpha.0"
+version = "2.0.0"
 description = "Generates functions to convert Python classes to JSON dumpable objects."
 authors = ["Ben Samuel <bsamuel@unitedincome.com>"]
 license = "MIT"

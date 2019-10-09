@@ -38,9 +38,11 @@ class SimpleRuleSet:
     def lookup(self, verb, typ, accept_missing=False):
         trace("lookup({!s}, {!r}): start", verb, typ)
         if typ is None:
-            if not accept_missing:
+            if accept_missing:
+                trace("lookup({!s}, {!r}): attempt fallabck", verb, typ)
+                typ = self.fallback(verb=verb, typ=typ)
+            if typ is None:
                 raise TypeError("Attempted to find {} for 'None'".format(verb))
-            return self.fallback(verb=verb, typ=typ)
 
         with self.cache.access() as cache:
             action = cache.get(verb=verb, typ=typ)

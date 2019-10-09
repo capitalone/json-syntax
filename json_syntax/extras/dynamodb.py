@@ -31,24 +31,14 @@ from json_syntax.ruleset import SimpleRuleSet
 
 import base64 as b64
 from decimal import Decimal
+from enum import Enum
 from functools import partial
 from math import isfinite
 from numbers import Real
+from typing import Union
 
 DDB2PY = "dynamodb_to_python"
 PY2DDB = "python_to_dynamodb"
-
-
-def nulls(verb, typ, ctx):
-    """
-    A rule to represent boolean values as Dynamo nulls.
-    """
-    if typ != NoneType:
-        return
-    if verb == DDB2PY:
-        return decode_null
-    elif verb == PY2DDB:
-        return encode_null
 
 
 def booleans(verb, typ, ctx):
@@ -86,6 +76,15 @@ def strings(verb, typ, ctx):
         return decode_string
     elif verb == PY2DDB:
         return encode_string
+
+
+def enums(verb, typ, ctx):
+    "Rule to convert between enumerated types and strings."
+    if issub_safe(typ, Enum):
+        if verb == PY2DDB:
+            return encode_enum
+        elif verb == DDB2PY:
+            return partial(decode_enum, typ=typ)
 
 
 def binary(verb, typ, ctx):
@@ -163,6 +162,40 @@ def attrs(verb, typ, ctx):
         return partial(encode_map, inner_map=inner_map)
 
 
+def nulls(verb, typ, ctx):
+    """
+    A rule to represent boolean values as Dynamo nulls.
+    """
+    if typ != NoneType:
+        return
+    if verb == DDB2PY:
+        return decode_null
+    elif verb == PY2DDB:
+        return encode_null
+
+
+def optionals(verb, typ, ctx):
+    """
+    Handle an ``Optional[inner]`` by passing ``None`` through.
+    """
+    if has_origin(typ, Union, num_args=2):
+        if NoneType not in typ.__args__:
+            return
+        inner = None
+        for arg in typ.__args__:
+            if arg is not NoneType:
+                inner = arg
+        if inner is None:
+            raise TypeError("Could not find inner type for Optional: " + str(typ))
+    else:
+        return
+    inner = ctx.lookup(verb=verb, typ=inner)
+    if verb == DDB2PY:
+        return partial(decode_optional, inner=inner)
+    elif verb == PY2DDB:
+        return partial(encode_optional, inner=inner)
+
+
 class DynamodbRuleSet(SimpleRuleSet):
     def dynamodb_to_python(self, typ):
         return self.lookup(verb=DDB2PY, typ=typ)
@@ -172,14 +205,15 @@ class DynamodbRuleSet(SimpleRuleSet):
 
 
 def dynamodb_ruleset(
-    nulls=nulls,
-    booleans=booleans,
-    numbers=numbers,
     strings=strings,
+    numbers=numbers,
+    booleans=booleans,
     binary=binary,
     lists=lists,
-    sets=sets,
     attrs=attrs,
+    enums=enums,
+    sets=sets,
+    optionals=optionals,
     extras=(),
     custom=DynamodbRuleSet,
     cache=None,
@@ -188,14 +222,15 @@ def dynamodb_ruleset(
     Constructs a RuleSet to migrate data to and from DynamoDB.
     """
     return custom(
-        nulls,
-        booleans,
-        numbers,
         strings,
+        numbers,
+        booleans,
         binary,
         lists,
-        sets,
         attrs,
+        enums,
+        sets,
+        optionals,
         *extras,
         cache=cache,
     )
@@ -227,13 +262,20 @@ def desigil(value, **sigils):
     )
 
 
-def decode_null(value):
-    desigil(value, NULL=bool)
-    return None
+def decode_optional(value, inner):
+    try:
+        desigil(value, NULL=bool)
+    except ValueError:
+        return inner(value)
+    else:
+        return None
 
 
-def encode_null(value):
-    return {"NULL": True}
+def encode_optional(value, inner):
+    if value is None:
+        return {"NULL": True}
+    else:
+        return inner(value)
 
 
 def decode_boolean(value):
@@ -289,6 +331,15 @@ def decode_string(value):
 
 def encode_string(value):
     return {"S": str(value)}
+
+
+def decode_enum(value, typ):
+    _, value = desigil(value, S=str)
+    return typ[value]
+
+
+def encode_enum(value):
+    return {"S": value.name}
 
 
 def decode_list(value, inner, typ):

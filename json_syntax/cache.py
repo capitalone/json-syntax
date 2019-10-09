@@ -129,6 +129,7 @@ class RLockCache(SimpleCache):
     def __init__(self, timeout=-1):
         self._rlock = threading.RLock()
         self._timeout = -1
+        self.cache = {}
 
     def __enter__(self):
         if not self._rlock.acquire(timeout=self._timeout):
