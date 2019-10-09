@@ -1,5 +1,6 @@
 from json_syntax import helpers as hlp
 
+import traceback as tb
 import typing as t
 
 
@@ -29,7 +30,7 @@ def test_has_origin_num_args():
     assert hlp.has_origin(t.Tuple[int, str, float], tuple, num_args=3)
 
 
-def test_issub_safe_normal_type():
+def test_issub_safe_normal_type1():
     "Test that issub_safe behaves like issubclass for normal types."
 
     assert hlp.issub_safe(bool, int)
@@ -37,7 +38,7 @@ def test_issub_safe_normal_type():
     assert not hlp.issub_safe(int, str)
 
 
-def test_issub_safe_normal_type():
+def test_issub_safe_normal_type2():
     "Test that issub_safe returns False for generic types."
 
     assert not hlp.issub_safe(t.List[int], list)
@@ -81,3 +82,27 @@ def test_resolve_fwd_ref_bad_context():
     actual = hlp.resolve_fwd_ref(subj, "dummy")
 
     assert actual is subj
+
+
+def outside(*msg):
+    with hlp.ErrorContext(".", "alpha"):
+        return inside(*msg)
+
+
+def inside(*msg):
+    with hlp.ErrorContext(".", "beta"):
+        raise ValueError(*msg)
+
+
+def run_func(*args):
+    try:
+        outside(*args)
+    except ValueError as exc:
+        return "".join(tb.format_exception_only(type(exc), exc))
+
+
+def test_error_contexts():
+    "Test that error contexts add information correctly."
+    assert run_func() == "ValueError: At .alpha.beta\n"
+    assert run_func("message") == "ValueError: message; at .alpha.beta\n"
+    assert run_func("two", "parts") == "ValueError: ('two; at .alpha.beta', 'parts')\n"

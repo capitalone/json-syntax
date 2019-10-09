@@ -37,6 +37,9 @@ def has_origin(typ, origin, num_args=None):
 
 
 def get_origin(typ):
+    """
+    Get the origin type of a generic type. For example, List has an "origin type" of list.
+    """
     try:
         t_origin = typ.__origin__
     except AttributeError:
@@ -84,30 +87,34 @@ if python_minor < (3, 7):
         for check in getattr(abc, name, None), getattr(c, name.lower(), None):
             if check:
                 _map.append((generic, check))
-                continue
+                break
     _pts = {prov: stable for prov, stable in _map}
-    _stp = {stable: prov for prov, stable in _map}
+    # _stp = {stable: prov for prov, stable in _map}
 
     def _origin_pts(origin, _pts=_pts):
         """
-        Convert the __origin__ of a generic type returned by the provisional typing API (python3.5) to the stable version.
+        Convert the __origin__ of a generic type returned by the provisional typing API (python3.5) to the stable
+        version.
+
+        Don't use this, just use get_origin.
         """
         return _pts.get(origin, origin)
 
-    def _origin_stp(origin, _stp=_stp):
-        """
-        Convert the __origin__ of a generic type in the stable typing API (python3.6+) to the provisional version.
-        """
-        return _stp.get(origin, origin)
+    # def _origin_stp(origin, _stp=_stp):
+    #     """
+    #     Convert the __origin__ of a generic type in the stable typing API (python3.6+) to the provisional version.
+    #     """
+    #     return _stp.get(origin, origin)
 
     del _pts
-    del _stp
+    # del _stp
     del _map
     del seen
     del abc
     del c
 else:
-    _origin_pts = _origin_stp = identity
+    _origin_pts = identity
+    # _origin_stp = identity
 
 
 def issub_safe(sub, sup):
@@ -149,57 +156,41 @@ if _eval_type is None:
         return typ
 
 
-_missing_values = set()
-try:
-    import attr
-
-    _missing_values.add(attr.NOTHING)
-except ImportError:
-    pass
-try:
-    import dataclasses
-
-    _missing_values.add(dataclasses.MISSING)
-except ImportError:
-    pass
-
-
-def is_attrs_field_required(field):
+class _Context:
     """
-    Determine if a field's default value is missing.
+    Stash contextual information in an exception. As we don't know exactly when an exception is displayed
+    to a user, this class tries to keep it always up to date.
+
+    This class subclasses string (to be compatible) and tracks an insertion point.
     """
-    if field.default not in _missing_values:
-        return False
-    try:
-        factory = field.default_factory
-    except AttributeError:
-        return True
-    else:
-        return factory in _missing_values
 
+    __slots__ = ("original", "context", "lead")
 
-def _add_context(context, exc):
-    try:
+    def __init__(self, original, lead, context):
+        self.original = original
+        self.lead = lead
+        self.context = [context]
+
+    def __str__(self):
+        return "{}{}{}".format(
+            self.original, self.lead, "".join(reversed(self.context))
+        )
+
+    def __repr__(self):
+        return repr(self.__str__())
+
+    @classmethod
+    def add(cls, exc, context):
+        args = exc.args
+        if args and isinstance(args[0], cls):
+            args[0].context.append(context)
+            return
         args = list(exc.args)
-        arg_num, point = getattr(exc, "_context", (None, None))
-
-        if arg_num is None:
-            for arg_num, val in enumerate(args):
-                if isinstance(val, str):
-                    args[arg_num] = args[arg_num] + "; at " if val else "At "
-                    break
-            else:  # This 'else' clause runs if we don't `break`
-                arg_num = len(args)
-                args.append("At ")
-            point = len(args[arg_num])
-
-        arg = args[arg_num]
-        args[arg_num] = arg[:point] + str(context) + arg[point:]
+        if args:
+            args[0] = cls(args[0], "; at ", context)
+        else:
+            args.append(cls("", "At ", context))
         exc.args = tuple(args)
-        exc._context = (arg_num, point)
-    except Exception:
-        # Swallow exceptions to avoid adding confusion.
-        pass
 
 
 class ErrorContext:
@@ -232,7 +223,7 @@ class ErrorContext:
     them with angle brackets, e.g. `<Class>`
     """
 
-    def __init__(self, context):
+    def __init__(self, *context):
         self.context = context
 
     def __enter__(self):
@@ -240,7 +231,7 @@ class ErrorContext:
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_value is not None:
-            _add_context(self.context, exc_value)
+            _Context.add(exc_value, "".join(self.context))
 
 
 def err_ctx(context, func):
@@ -255,5 +246,5 @@ def err_ctx(context, func):
     try:
         return func()
     except Exception as exc:
-        _add_context(context, exc)
+        _Context.add(exc, context)
         raise

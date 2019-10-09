@@ -7,9 +7,11 @@ from functools import partial
 """
 This example is of working around common date issues.
 
-The standard rules use the standard library's fromisoformat and isoformat methods, to abide by the principle of least surprise.
+The standard rules use the standard library's fromisoformat and isoformat methods, to abide by the principle of least
+surprise.
 
-But it's pretty common to have to consume a datetime in a date field, and it may also be the case that you want to discard the timestamp.
+But it's pretty common to have to consume a datetime in a date field, and it may also be the case that you want to
+discard the timestamp.
 
 (Note: requires python3.7 or greater.)
 """

@@ -26,6 +26,18 @@ class SimpleCache:
     def __init__(self):
         self.cache = {}
 
+    def access(self):
+        """Requests a context manager to access the cache."""
+        return self
+
+    def __enter__(self):
+        """Stub implementation; see subclasses."""
+        return self
+
+    def __exit__(self, e_typ, e_val, e_tb):
+        """Stub implementation; see subclasses."""
+        return
+
     def get(self, verb, typ):
         result = self._lookup(verb, typ)
         return result if result is not NotImplemented else None
@@ -107,3 +119,22 @@ class ThreadLocalCache(SimpleCache):
         except AttributeError:
             _cache = local.cache = {}
             return _cache
+
+
+class RLockCache(SimpleCache):
+    """
+    Uses a re-entrant lock to ensure only one thread is touching rules at a time.
+    """
+
+    def __init__(self, timeout=-1):
+        self._rlock = threading.RLock()
+        self._timeout = -1
+        self.cache = {}
+
+    def __enter__(self):
+        if not self._rlock.acquire(timeout=self._timeout):
+            raise TypeError("acquire failed to acquire a lock")
+        return self
+
+    def __exit__(self, e_typ, e_val, e_tb):
+        self._rlock.release()

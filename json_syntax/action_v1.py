@@ -178,14 +178,15 @@ def check_mapping(value, key, val, con):
 def convert_dict_to_attrs(value, pre_hook, inner_map, con):
     value = pre_hook(value)
     args = {}
-    for name, inner in inner_map:
-        with ErrorContext("[{!r}]".format(name)):
+    for attr in inner_map:
+        with ErrorContext("[{!r}]".format(attr.name)):
             try:
-                arg = value[name]
+                arg = value[attr.name]
             except KeyError:
-                pass
+                if attr.is_required:
+                    raise KeyError("Missing key") from None
             else:
-                args[name] = inner(arg)
+                args[attr.name] = attr.inner(arg)
     return con(**args)
 
 
@@ -193,27 +194,27 @@ def check_dict(value, inner_map, pre_hook):
     value = pre_hook(value)
     if not isinstance(value, dict):
         return False
-    for name, inner, required in inner_map:
-        with ErrorContext("[{!r}]".format(name)):
+    for attr in inner_map:
+        with ErrorContext("[{!r}]".format(attr.name)):
             try:
-                arg = value[name]
+                arg = value[attr.name]
             except KeyError:
-                if required:
+                if attr.is_required:
                     return False
             else:
-                if not inner(arg):
+                if not attr.inner(arg):
                     return False
     return True
 
 
 def convert_attrs_to_dict(value, post_hook, inner_map):
     out = {}
-    for name, inner, default in inner_map:
-        with ErrorContext("." + name):
-            field = getattr(value, name)
-            if field == default:
+    for attr in inner_map:
+        with ErrorContext("." + attr.name):
+            field = getattr(value, attr.name)
+            if field == attr.default:
                 continue
-            out[name] = inner(field)
+            out[attr.name] = attr.inner(field)
     if post_hook is not None:
         out = getattr(value, post_hook)(out)
     return out

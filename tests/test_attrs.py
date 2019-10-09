@@ -1,17 +1,13 @@
 import pytest
-from unittest.mock import Mock
 
 from json_syntax import attrs as at
 from json_syntax.helpers import JSON2PY, PY2JSON, INSP_PY, INSP_JSON
 
-import attr
-from collections import namedtuple
-
 try:
     from dataclasses import dataclass
 except ImportError:
-    dataclass = lambda cls: None
-from typing import NamedTuple, Tuple
+    dataclass = lambda cls: None  # noqa
+from typing import Tuple
 
 try:
     from tests.types_attrs_ann import flat_types, hook_types, Named1, Named2, Named3

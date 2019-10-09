@@ -2,8 +2,8 @@
 Patterns to represent roughly what syntax will look like, and also to investigate whether
 unions are potentially ambiguous.
 """
-from functools import partial, lru_cache, singledispatch
-from itertools import chain, cycle, islice, product, zip_longest
+from functools import partial, singledispatch
+from itertools import cycle, islice, product, zip_longest
 from enum import IntEnum
 
 try:
