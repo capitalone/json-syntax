@@ -11,7 +11,7 @@ TRACE = 5
 def trace(fmt, *args, _logger=logger, _TRACE=TRACE):
     "Trace a log message. Avoids issues with applications setting `style`."
     if _logger.isEnabledFor(_TRACE):
-        _logger.log(_TRACE, fmt.format(args))
+        _logger.log(_TRACE, fmt.format(*args))
 
 
 def set_trace(enabled=True):
