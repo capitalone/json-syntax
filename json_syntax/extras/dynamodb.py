@@ -118,6 +118,23 @@ def lists(verb, typ, ctx):
         return partial(encode_list, inner=inner)
 
 
+def dicts(verb, typ, ctx):
+    """
+    A rule to represent lists as Dynamo list values.
+    """
+    if not has_origin(typ, dict, num_args=2):
+        return
+    (key_typ, val_typ) = typ.__args__
+    if key_typ != str:
+        return
+
+    inner = ctx.lookup(verb=verb, typ=val_typ)
+    if verb == DDB2PY:
+        return partial(decode_dict, inner_key=str, inner_val=inner, con=get_origin(typ))
+    elif verb == PY2DDB:
+        return partial(encode_dict, inner=inner)
+
+
 def sets(verb, typ, ctx):
     """
     A rule to represent sets. Will only use specialized Dynamo sets, to abide by principle of least astonishment.
@@ -213,6 +230,7 @@ def dynamodb_ruleset(
     attrs=attrs,
     enums=enums,
     sets=sets,
+    dicts=dicts,
     optionals=optionals,
     extras=(),
     custom=DynamodbRuleSet,
@@ -230,6 +248,7 @@ def dynamodb_ruleset(
         attrs,
         enums,
         sets,
+        dicts,
         optionals,
         *extras,
         cache=cache,
@@ -349,6 +368,15 @@ def decode_list(value, inner, typ):
 
 def encode_list(value, inner):
     return {"L": list(map(inner, value))}
+
+
+def decode_dict(value, inner_key, inner_val, con):
+    _, value = desigil(value, M=dict)
+    return con(((inner_key(key), inner_val(val)) for key, val in value.items()))
+
+
+def encode_dict(value, inner):
+    return {"M": {str(key): inner(val) for key, val in value.items()}}
 
 
 def decode_map(value, inner_map, con):
