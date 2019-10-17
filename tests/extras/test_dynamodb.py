@@ -5,7 +5,7 @@ from json_syntax.helpers import NoneType
 
 from fractions import Fraction
 from decimal import Decimal
-from typing import List, Set, Optional
+from typing import Dict, List, Optional, Set
 
 try:
     import attr
@@ -71,6 +71,16 @@ def test_list():
         "apple",
         "banana",
     ]
+
+
+def test_dict():
+    assert encode({"A": 1, "B": 2}, Dict[str, int]) == {
+        "M": {"A": {"N": "1"}, "B": {"N": "2"}}
+    }
+    assert decode({"M": {"A": {"N": "1"}, "B": {"N": "2"}}}, Dict[str, int]) == {
+        "A": 1,
+        "B": 2,
+    }
 
 
 def cheat(value):

@@ -55,7 +55,9 @@ class Attribute:
         self.is_required = is_required
 
     def __repr__(self):
-        return '<Attribute {!r}; {}>'.format(self.name, 'required' if self.is_required else 'optional')
+        return "<Attribute {!r}; {}>".format(
+            self.name, "required" if self.is_required else "optional"
+        )
 
 
 def is_attrs_field_required(field):
@@ -80,18 +82,22 @@ def attr_map(verb, outer, ctx, gen):
             try:
                 attr.typ = resolve_fwd_ref(attr.typ, outer)
             except TypeError:
-                failed.append('resolve fwd ref {} for {}'.format(attr.typ, attr.name))
+                failed.append("resolve fwd ref {} for {}".format(attr.typ, attr.name))
         if attr.inner is None:
-            attr.inner = ctx.lookup(verb=verb, typ=resolve_fwd_ref(attr.typ, outer), accept_missing=True)
+            attr.inner = ctx.lookup(
+                verb=verb, typ=resolve_fwd_ref(attr.typ, outer), accept_missing=True
+            )
         if attr.inner is None:
             if attr.typ is None:
-                failed.append('get fallback for {}'.format(attr.name))
+                failed.append("get fallback for {}".format(attr.name))
             else:
-                failed.append('get {} for {}'.format(attr.typ, attr.name))
+                failed.append("get {} for {}".format(attr.typ, attr.name))
         result.append(attr)
 
     if failed:
-        raise TypeError("{}({}) failed while trying to: {}".format(verb, outer, ', '.join(failed)))
+        raise TypeError(
+            "{}({}) failed while trying to: {}".format(verb, outer, ", ".join(failed))
+        )
     return tuple(result)
 
 
@@ -111,16 +117,21 @@ def build_attribute_map(verb, typ, ctx, read_all):
         else:
             fields = fields.values()
 
-    return attr_map(verb, typ, ctx, (
-        Attribute(
-            name=field.name,
-            typ=field.type,
-            is_required=is_attrs_field_required(field),
-            default=field.default,
-        )
-        for field in fields
-        if read_all or field.init
-    ))
+    return attr_map(
+        verb,
+        typ,
+        ctx,
+        (
+            Attribute(
+                name=field.name,
+                typ=field.type,
+                is_required=is_attrs_field_required(field),
+                default=field.default,
+            )
+            for field in fields
+            if read_all or field.init
+        ),
+    )
 
 
 def build_named_tuple_map(verb, typ, ctx):
@@ -152,15 +163,20 @@ def build_named_tuple_map(verb, typ, ctx):
     except AttributeError:
         pass
 
-    return attr_map(verb, typ, ctx, (
-        Attribute(
-            name=name,
-            typ=inner,
-            is_required=name not in defaults,
-            default=defaults.get(name, SENTINEL),
-        )
-        for name, inner in fields
-    ))
+    return attr_map(
+        verb,
+        typ,
+        ctx,
+        (
+            Attribute(
+                name=name,
+                typ=inner,
+                is_required=name not in defaults,
+                default=defaults.get(name, SENTINEL),
+            )
+            for name, inner in fields
+        ),
+    )
 
 
 def build_typed_dict_map(verb, typ, ctx):
@@ -176,12 +192,12 @@ def build_typed_dict_map(verb, typ, ctx):
     ):
         return
 
-    return attr_map(verb, typ, ctx, (
-        Attribute(
-            name=name,
-            typ=inner,
-            is_required=True,
-            default=SENTINEL,
-        )
-        for name, inner in typ.__annotations__.items()
-    ))
+    return attr_map(
+        verb,
+        typ,
+        ctx,
+        (
+            Attribute(name=name, typ=inner, is_required=True, default=SENTINEL)
+            for name, inner in typ.__annotations__.items()
+        ),
+    )
