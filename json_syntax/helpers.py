@@ -203,7 +203,7 @@ class ErrorContext:
     ...   with ErrorContext('[0]'):
     ...     with ErrorContext('.qux'):
     ...       1 / 0
-    Traceback (most recent call last)
+    Traceback (most recent call last):
     ZeroDivisionError: division by zero; at .foo[0].qux
 
     The `__exit__` method will catch the exception and look for a `_context` attribute assigned to it. If none exists,
@@ -240,8 +240,8 @@ def err_ctx(context, func):
 
     ``err_ctx(context, func)`` has the same effect as:
 
-    >>> with ErrorContext(context):
-    ...   return func()
+        with ErrorContext(context):
+            return func()
     """
     try:
         return func()

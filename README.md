@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/UnitedIncome/json-syntax/tree/master.svg?style=svg)](https://circleci.com/gh/UnitedIncome/json-syntax/tree/master)
+
 # json-syntax
 
 A Python library to translate between JSON compatible structures and native Python
@@ -59,11 +61,11 @@ their JSON representation.
 These were originally intended as examples for how to use the package, but they're potentially
 useful in their own right.
 
- * A ruleset for use with AWS DynamoDB is included with basic facilities.
+ * [A ruleset][extras ddb] for use with AWS DynamoDB is included with basic facilities.
    * Restriction: No general support for `typing.Union`, only `Optional`.
    * Restriction: No general support for `Set`, only the special cases that are native to DynamoDB.
- * A `Flag` psuedo-type allows you to use regular strings directly as flags.
- * A rule that will accept a complete `datetime` and return a `date` by truncating the timestamp.
+ * [A `Flag` psuedo-type][extras flag] allows you to use regular strings directly as flags.
+ * [A rule][extras loose] that will accept a complete `datetime` and return a `date` by truncating the timestamp.
 
 ## Usage
 
@@ -359,7 +361,14 @@ You'll want pyenv, then install the pythons:
        PYENV_VERSION=$v python get-pip.py
     done
 
-Once you install `tox` in your preferred python, running it is just `tox`.
+Once you install `tox` in your preferred python, running it is just `tox`. (Note: this is
+largely redundant as the build is configured to all the different pythons on Circle.)
+
+### Contributor roll call
+
+* @bsamuel-ui -- Ben Samuel
+* @dschep
+* @rugheid
 
 ### Notes
 
@@ -385,3 +394,6 @@ union. [↩](#a2)
 [dataclasses]: https://docs.python.org/3/library/dataclasses.html
 [sharp]: https://github.com/UnitedIncome/json-syntax/blob/master/README.md#sharp-edges
 [ellipsis]: https://docs.python.org/3/library/stdtypes.html#the-ellipsis-object
+[extras ddb]: https://github.com/UnitedIncome/json-syntax/tree/master/json_syntax/extras/dynamodb.py
+[extras flag]: https://github.com/UnitedIncome/json-syntax/tree/master/json_syntax/extras/flags.py
+[extras loose]: https://github.com/UnitedIncome/json-syntax/tree/master/json_syntax/extras/loose_dates.py
