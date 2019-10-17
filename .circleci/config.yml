@@ -9,6 +9,26 @@ jobs:
       LANG: en_US.UTF-8
     working_directory: ~/json-syntax
     steps:
+      - checkout
+      - run:
+          name: Set up virtualenv
+          command: |
+            pip install poetry
+            poetry install
+
+      - run:
+          name: Run tests
+          command: |
+            poetry run pytest tests/
+
+      - store_artifacts:  # If a property test fails, this contains the example that failed.
+          path: ".hypothesis"
+          destination: ".hypothesis"
+  test-36:
+    docker:
+      - image: circleci/python:3.6
+    environment: *std_env
+    steps:
       &std_steps
       - checkout
       - run:
@@ -25,11 +45,6 @@ jobs:
       - store_artifacts:  # If a property test fails, this contains the example that failed.
           path: ".hypothesis"
           destination: ".hypothesis"
-  test-36:
-    docker:
-      - image: circleci/python:3.6
-    environment: *std_env
-    steps: *std_steps
     working_directory: ~/json-syntax
   test-37:
     docker:
