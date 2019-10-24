@@ -1,15 +1,17 @@
 import attr
 from typing import NamedTuple
 
-from tests.types_attrs_noann import flat_types, hook_types, Hooks
-
-# Import for re-export
-from tests.types_attrs_noann import Named1, Named2  # noqa
+from tests.types_attrs_noann import flat_types, hook_types, Hooks, Dict1, Named1, Named2  # noqa
 
 try:
     from dataclasses import dataclass
 except ImportError:
     dataclass = None
+
+try:
+    from typing import TypedDict
+except ImportError:
+    TypedDict = None
 
 
 @attr.s(auto_attribs=True)
@@ -49,3 +51,11 @@ if dataclass:
 class Named3(NamedTuple):
     a: int
     b: str = "default"
+
+
+if TypedDict:
+    class Dict2(TypedDict):
+        a: int
+        b: str
+else:
+    Dict2 = None
