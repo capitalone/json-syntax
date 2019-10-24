@@ -10,9 +10,25 @@ except ImportError:
 from typing import Tuple
 
 try:
-    from tests.types_attrs_ann import flat_types, hook_types, Named1, Named2, Named3
+    from tests.types_attrs_ann import (
+        flat_types,
+        hook_types,
+        Named1,
+        Named2,
+        Named3,
+        Dict1,
+        Dict2,
+    )
 except SyntaxError:
-    from tests.types_attrs_noann import flat_types, hook_types, Named1, Named2, Named3
+    from tests.types_attrs_noann import (
+        flat_types,
+        hook_types,
+        Named1,
+        Named2,
+        Named3,
+        Dict1,
+        Dict2,
+    )
 
 
 class Fail:
@@ -224,3 +240,37 @@ def test_tuples_encoding():
     assert not inspect(["str", "foo"])
     assert not inspect([33, "foo", None])
     assert not inspect({})
+
+
+@pytest.mark.parametrize(
+    "dict_type,reason",
+    [(Dict1, "TypedDict unavailable"), (Dict2, "TypedDict or annotations unavailable")],
+)
+def test_typed_dict_encoding(dict_type, reason):
+    "Test that typed_dicts encodes and decodes a typed dict."
+    if dict_type is None:
+        pytest.skip(reason)
+
+    encoder = at.typed_dicts(verb=PY2JSON, typ=dict_type, ctx=Ctx())
+    assert encoder({"a": 3, "b": "foo"}) == {"a": 3, "b": "foo"}
+    assert encoder({"a": 3, "b": "foo", "c": "extra"}) == {"a": 3, "b": "foo"}
+    assert encoder({"a": 3.2, "b": 5}) == {"a": 3, "b": "5"}
+
+    decoder = at.typed_dicts(verb=JSON2PY, typ=dict_type, ctx=Ctx())
+    assert decoder({"a": 3, "b": "foo"}) == {"a": 3, "b": "foo"}
+    assert decoder({"a": 3, "b": "foo", "c": "extra"}) == {"a": 3, "b": "foo"}
+    assert decoder({"a": 3.2, "b": 5}) == {"a": 3, "b": "5"}
+
+    inspect = at.typed_dicts(verb=INSP_PY, typ=dict_type, ctx=Ctx())
+    assert inspect({"a": 3, "b": "foo"})
+    assert not inspect({"a": 3.2, "b": False})
+    assert not inspect("foo")
+    assert not inspect({})
+    assert inspect({"a": 3, "b": "foo", "c": True})
+
+    inspect = at.typed_dicts(verb=INSP_JSON, typ=dict_type, ctx=Ctx())
+    assert inspect({"a": 3, "b": "foo"})
+    assert not inspect({"a": 3.2, "b": False})
+    assert not inspect("foo")
+    assert not inspect({})
+    assert inspect({"a": 3, "b": "foo", "c": True})

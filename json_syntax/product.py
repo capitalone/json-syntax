@@ -77,22 +77,22 @@ def is_attrs_field_required(field):
 def attr_map(verb, outer, ctx, gen):
     result = []
     failed = []
-    for attr in gen:
-        if attr.typ is not None:
+    for att in gen:
+        if att.typ is not None:
             try:
-                attr.typ = resolve_fwd_ref(attr.typ, outer)
+                att.typ = resolve_fwd_ref(att.typ, outer)
             except TypeError:
-                failed.append("resolve fwd ref {} for {}".format(attr.typ, attr.name))
-        if attr.inner is None:
-            attr.inner = ctx.lookup(
-                verb=verb, typ=resolve_fwd_ref(attr.typ, outer), accept_missing=True
+                failed.append("resolve fwd ref {} for {}".format(att.typ, att.name))
+        if att.inner is None:
+            att.inner = ctx.lookup(
+                verb=verb, typ=resolve_fwd_ref(att.typ, outer), accept_missing=True
             )
-        if attr.inner is None:
-            if attr.typ is None:
-                failed.append("get fallback for {}".format(attr.name))
+        if att.inner is None:
+            if att.typ is None:
+                failed.append("get fallback for {}".format(att.name))
             else:
-                failed.append("get {} for {}".format(attr.typ, attr.name))
-        result.append(attr)
+                failed.append("get {} for {}".format(att.typ, att.name))
+        result.append(att)
 
     if failed:
         raise TypeError(
