@@ -37,8 +37,8 @@ def test_optional():
 
 
 def test_null():
-    assert encode(None, type(None)) == {"NULL": True}
-    assert decode({"NULL": True}, type(None)) is None
+    assert encode(None, NoneType) == {"NULL": True}
+    assert decode({"NULL": True}, NoneType) is None
 
 
 def test_bool():

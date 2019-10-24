@@ -4,6 +4,7 @@ from .action_v1 import (
     check_isinst,
     check_tuple_as_list,
     convert_attrs_to_dict,
+    convert_dict_to_dict,
     convert_dict_to_attrs,
     convert_tuple_as_list,
 )

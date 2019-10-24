@@ -1,14 +1,14 @@
 import attr
 from typing import NamedTuple
 
-from tests.types_attrs_noann import (
+from tests.types_attrs_noann import (  # noqa
     flat_types,
     hook_types,
     Hooks,
     Dict1,
     Named1,
     Named2,
-)  # noqa
+)
 
 try:
     from dataclasses import dataclass
