@@ -215,10 +215,83 @@ def optionals(verb, typ, ctx):
 
 class DynamodbRuleSet(SimpleRuleSet):
     def dynamodb_to_python(self, typ):
+        """
+        Gets a function to convert a DynamoDB structure to a Python object.
+
+        This method is here for completeness; see ddb_item_to_python.
+        """
         return self.lookup(verb=DDB2PY, typ=typ)
 
     def python_to_dynamodb(self, typ):
+        """
+        Gets a function to convert a Python object to a DynamoDB structure.
+
+        This method is here for completeness; see python_to_ddb_item and ad_hoc.
+        """
         return self.lookup(verb=PY2DDB, typ=typ)
+
+    def ddb_item_to_python(self, typ):
+        """
+        Gets a function to convert a DynamoDB Item to a Python object.
+
+        The `typ` argument must be an attrs class, but this method won't check that.
+
+        Usage:
+
+            rs = dynamodb_ruleset()
+            response = client.get_item(TableName='my_table', Key=rs.ad_hoc(my_key='some_string'))
+            decoder = rs.ddb_item_to_python(MyAttrsType)
+            result = decoder(response['Item'])
+        """
+        inner = self.lookup(verb=DDB2PY, typ=typ)
+        return partial(wrap_item, inner=inner)
+
+    def python_to_ddb_item(self, typ):
+        """
+        Gets a function to convert a Python object to a DynamoDB Item.
+
+        The `typ` argument must be an attrs class, but this method won't check that.
+
+        Usage:
+
+            rs = dynamodb_ruleset()
+            encoder = rs.python_to_ddb_item(MyAttrsType)
+            client.put_item(TableName='my_table', Item=encoder(my_item))
+        """
+        inner = self.lookup(verb=PY2DDB, typ=typ)
+        return partial(unwrap_item, inner=inner)
+
+    def ad_hoc(self, _key_prefix='', **kw):
+        """
+        Convenience method to encode an ad hoc set of arguments used in various DynamoDB APIs.
+
+        If an argument is a tuple, it must be a two-item tuple of ``(value, type)``.
+        If you want to use container types, you'll have to specify them fully. For empty
+        dicts or lists, just use any type as the inner, e.g. ``({}, Dict[str, str])``.
+
+        Example:
+
+            rs = dynamodb_ruleset()
+            client.update_item(
+                TableName='my_table',
+                Key=rs.ad_hoc(my_hash_key='some_string', my_int_key=77),
+                UpdateExpression="SET counter=:my_int, info=:my_class, num=:my_float",
+                ExpressionAttributeValue=rs.ad_hoc(
+                   ':',  # indicates that keys are prefixed with :
+                   my_int=5,
+                   my_class=(instance, MyClass),
+                   my_float=3.3,
+                )
+            )
+        """
+        out = {}
+        for key, val in kw.items():
+            if isinstance(val, tuple):
+                enc = self.python_to_dynamodb(val[1])(val[0])
+            else:
+                enc = self.python_to_dynamodb(type(val))(val)
+            out[_key_prefix + key] = enc
+        return out
 
 
 def dynamodb_ruleset(
@@ -250,6 +323,7 @@ def dynamodb_ruleset(
         sets,
         dicts,
         optionals,
+        nulls,
         *extras,
         cache=cache,
     )
@@ -297,6 +371,18 @@ def encode_optional(value, inner):
         return inner(value)
 
 
+def decode_null(value):
+    desigil(value, NULL=bool)
+    return None
+
+
+def encode_null(value):
+    if not value:
+        return {"NULL": True}
+    else:
+        raise ValueError('{} is not None'.format(value))
+
+
 def decode_boolean(value):
     _, value = desigil(value, BOOL=bool)
     return value
@@ -314,7 +400,7 @@ def b64encode(value):
 
 
 def decode_binary(value):
-    _, value = desigil(value, B=str)
+    _, value = desigil(value, B=(str, bytes))
     return b64decode(value)
 
 
@@ -335,7 +421,7 @@ def _encode_number(value):
     if isinstance(value, (int, float, Decimal)):
         return str(value)
     else:
-        # This is all the Real interface guarantees us. It's a strech using Fraction in Dynamo.
+        # This is all the Real interface guarantees us. It's a stretch using Fraction in Dynamo.
         return str(float(value))
 
 
@@ -428,3 +514,13 @@ def decode_string_set(value, con):
 
 def encode_string_set(value):
     return {"SS": list(map(str, value))}
+
+
+def wrap_item(item, inner):
+    return inner({'M': item})
+
+
+def unwrap_item(value, inner):
+    value = inner(value)
+    _, item = desigil(value, M=dict)
+    return item
