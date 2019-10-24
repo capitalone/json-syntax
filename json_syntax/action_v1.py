@@ -190,6 +190,20 @@ def convert_dict_to_attrs(value, pre_hook, inner_map, con):
     return con(**args)
 
 
+def convert_dict_to_dict(value, inner_map, con):
+    args = {}
+    for attr in inner_map:
+        with ErrorContext("[{!r}]".format(attr.name)):
+            try:
+                arg = value[attr.name]
+            except KeyError:
+                if attr.is_required:
+                    raise KeyError("Missing key") from None
+            else:
+                args[attr.name] = attr.inner(arg)
+    return con(args)
+
+
 def check_dict(value, inner_map, pre_hook):
     value = pre_hook(value)
     if not isinstance(value, dict):

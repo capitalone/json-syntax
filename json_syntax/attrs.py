@@ -78,23 +78,6 @@ def attrs_classes(
         )
 
 
-def _simple_product(inner_map, verb, typ, ctx):
-    if verb == JSON2PY:
-        return partial(
-            convert_dict_to_attrs, pre_hook=identity, inner_map=inner_map, con=typ
-        )
-    elif verb == PY2JSON:
-        return partial(convert_attrs_to_dict, post_hook=None, inner_map=inner_map)
-    elif verb == INSP_JSON:
-        return partial(check_dict, pre_hook=identity, inner_map=inner_map)
-    elif verb == PATTERN:
-        return pat.Object.exact(
-            (pat.String.exact(attr.name), attr.inner)
-            for attr in inner_map
-            if attr.is_required
-        )
-
-
 def named_tuples(verb, typ, ctx):
     """
     Handle a ``NamedTuple(name, [('field', type), ('field', type)])`` type.
@@ -113,8 +96,20 @@ def named_tuples(verb, typ, ctx):
 
     if verb == INSP_PY:
         return partial(check_isinst, typ=typ)
-
-    return _simple_product(inner_map, verb, typ, ctx)
+    elif verb == JSON2PY:
+        return partial(
+            convert_dict_to_attrs, pre_hook=identity, inner_map=inner_map, con=typ
+        )
+    elif verb == PY2JSON:
+        return partial(convert_attrs_to_dict, post_hook=None, inner_map=inner_map)
+    elif verb == INSP_JSON:
+        return partial(check_dict, pre_hook=identity, inner_map=inner_map)
+    elif verb == PATTERN:
+        return pat.Object.exact(
+            (pat.String.exact(attr.name), attr.inner)
+            for attr in inner_map
+            if attr.is_required
+        )
 
 
 def typed_dicts(verb, typ, ctx):
@@ -132,11 +127,17 @@ def typed_dicts(verb, typ, ctx):
     if inner_map is None:
         return
 
-    if verb == INSP_PY:
-        return partial(check_dict, inner_map=inner_map, pre_hook=identity)
-
     # Note: we pass `dict` as the typ here because it's the correct constructor.
-    return _simple_product(inner_map, verb, dict, ctx)
+    if verb in (JSON2PY, PY2JSON):
+        return partial(convert_dict_to_dict, inner_map=inner_map, con=typ)
+    elif verb in (INSP_JSON, INSP_PY):
+        return partial(check_dict, pre_hook=identity, inner_map=inner_map)
+    elif verb == PATTERN:
+        return pat.Object.exact(
+            (pat.String.exact(attr.name), attr.inner)
+            for attr in inner_map
+            if attr.is_required
+        )
 
 
 def tuples(verb, typ, ctx):
