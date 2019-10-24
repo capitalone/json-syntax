@@ -261,7 +261,7 @@ class DynamodbRuleSet(SimpleRuleSet):
         inner = self.lookup(verb=PY2DDB, typ=typ)
         return partial(unwrap_item, inner=inner)
 
-    def ad_hoc(self, _key_prefix='', **kw):
+    def ad_hoc(self, _key_prefix="", **kw):
         """
         Convenience method to encode an ad hoc set of arguments used in various DynamoDB APIs.
 
@@ -380,7 +380,7 @@ def encode_null(value):
     if not value:
         return {"NULL": True}
     else:
-        raise ValueError('{} is not None'.format(value))
+        raise ValueError("{} is not None".format(value))
 
 
 def decode_boolean(value):
@@ -517,7 +517,7 @@ def encode_string_set(value):
 
 
 def wrap_item(item, inner):
-    return inner({'M': item})
+    return inner({"M": item})
 
 
 def unwrap_item(value, inner):

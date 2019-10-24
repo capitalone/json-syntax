@@ -49,8 +49,7 @@ except TypeError:
 Named3 = None
 
 if TypedDict:
-    Dict1 = TypedDict('Dict1', a=int, b=str)
-    typed_dict_types.append(Dict1)
+    Dict1 = TypedDict("Dict1", a=int, b=str)
 else:
     Dict1 = None
 Dict2 = None

@@ -1,7 +1,14 @@
 import attr
 from typing import NamedTuple
 
-from tests.types_attrs_noann import flat_types, hook_types, Hooks, Dict1, Named1, Named2  # noqa
+from tests.types_attrs_noann import (
+    flat_types,
+    hook_types,
+    Hooks,
+    Dict1,
+    Named1,
+    Named2,
+)  # noqa
 
 try:
     from dataclasses import dataclass
@@ -53,9 +60,9 @@ class Named3(NamedTuple):
     b: str = "default"
 
 
+Dict2 = None
 if TypedDict:
+
     class Dict2(TypedDict):
         a: int
         b: str
-else:
-    Dict2 = None

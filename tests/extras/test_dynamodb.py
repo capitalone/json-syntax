@@ -100,7 +100,7 @@ def test_dict():
 def cheat(value):
     if isinstance(value, dict):
         for key, val in value.items():
-            if key in ('SS', 'NS', 'BS'):
+            if key in ("SS", "NS", "BS"):
                 val.sort()
             else:
                 cheat(val)
@@ -196,44 +196,44 @@ def test_item2():
 def test_ad_hoc_atoms():
     rs = dynamodb_ruleset()
     actual = rs.ad_hoc(
-        ':',
+        ":",
         arg_null=None,
         arg_bool=False,
         arg_int=3,
         arg_float=6.6,
-        arg_dec=Decimal('-7.888'),
-        arg_str='some_string',
-        arg_bytes=b'some_byes',
+        arg_dec=Decimal("-7.888"),
+        arg_str="some_string",
+        arg_bytes=b"some_byes",
         arg_class=Outer(stuff=Inner(name="bob")),
     )
     assert actual == {
-        ':arg_bool': {'BOOL': False},
-        ':arg_bytes': {'B': 'c29tZV9ieWVz'},
-        ':arg_dec': {'N': '-7.888'},
-        ':arg_float': {'N': '6.6'},
-        ':arg_int': {'N': '3'},
-        ':arg_null': {'NULL': True},
-        ':arg_str': {'S': 'some_string'},
-        ':arg_class': {'M': {'stuff': {'M': {'name': {'S': 'bob'}}}}},
+        ":arg_bool": {"BOOL": False},
+        ":arg_bytes": {"B": "c29tZV9ieWVz"},
+        ":arg_dec": {"N": "-7.888"},
+        ":arg_float": {"N": "6.6"},
+        ":arg_int": {"N": "3"},
+        ":arg_null": {"NULL": True},
+        ":arg_str": {"S": "some_string"},
+        ":arg_class": {"M": {"stuff": {"M": {"name": {"S": "bob"}}}}},
     }
 
 
 def test_ad_hoc_typed():
     rs = dynamodb_ruleset()
     actual = rs.ad_hoc(
-        ':',
+        ":",
         arg_opt1=(None, Optional[int]),
         arg_opt2=(5, Optional[int]),
         arg_list=([3, 2.2, 6.0], List[float]),
         arg_tup=((3, 2.2, 6.0), Tuple[float, ...]),
         arg_class=(Outer(stuff=Inner(name="bob")), Outer),
-        arg_str_set=({'foo', 'bar', 'qux'}, Set[str])
+        arg_str_set=({"foo", "bar", "qux"}, Set[str]),
     )
     assert cheat(actual) == {
-        ':arg_opt1': {'NULL': True},
-        ':arg_opt2': {'N': '5'},
-        ':arg_list': {'L': [{'N': '3'}, {'N': '2.2'}, {'N': '6.0'}]},
-        ':arg_tup': {'L': [{'N': '3'}, {'N': '2.2'}, {'N': '6.0'}]},
-        ':arg_class': {'M': {'stuff': {'M': {'name': {'S': 'bob'}}}}},
-        ':arg_str_set': {'SS': ['bar', 'foo', 'qux']},
+        ":arg_opt1": {"NULL": True},
+        ":arg_opt2": {"N": "5"},
+        ":arg_list": {"L": [{"N": "3"}, {"N": "2.2"}, {"N": "6.0"}]},
+        ":arg_tup": {"L": [{"N": "3"}, {"N": "2.2"}, {"N": "6.0"}]},
+        ":arg_class": {"M": {"stuff": {"M": {"name": {"S": "bob"}}}}},
+        ":arg_str_set": {"SS": ["bar", "foo", "qux"]},
     }
