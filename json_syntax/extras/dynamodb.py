@@ -25,8 +25,16 @@ The ``boto3.resource('dynamodb').Table`` is already doing a conversion step we d
 Ref: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_AttributeValue.html#DDB-Type-AttributeValue-NS
 """
 
-from json_syntax.helpers import issub_safe, NoneType, has_origin, get_origin
+from json_syntax.helpers import (
+    issub_safe,
+    NoneType,
+    has_origin,
+    get_origin,
+    STR2PY,
+    PY2STR,
+)
 from json_syntax.product import build_attribute_map
+from json_syntax.string import stringify_keys
 from json_syntax.ruleset import SimpleRuleSet
 
 import base64 as b64
@@ -39,6 +47,7 @@ from typing import Union
 
 DDB2PY = "dynamodb_to_python"
 PY2DDB = "python_to_dynamodb"
+_STRING_ACTIONS = {DDB2PY: STR2PY, PY2DDB: PY2STR}
 
 
 def booleans(verb, typ, ctx):
@@ -122,17 +131,17 @@ def dicts(verb, typ, ctx):
     """
     A rule to represent lists as Dynamo list values.
     """
-    if not has_origin(typ, dict, num_args=2):
+    if verb not in _STRING_ACTIONS or not has_origin(typ, dict, num_args=2):
         return
     (key_typ, val_typ) = typ.__args__
-    if key_typ != str:
-        return
-
-    inner = ctx.lookup(verb=verb, typ=val_typ)
+    inner_key = ctx.lookup(verb=_STRING_ACTIONS[verb], typ=key_typ)
+    inner_val = ctx.lookup(verb=verb, typ=val_typ)
     if verb == DDB2PY:
-        return partial(decode_dict, inner_key=str, inner_val=inner, con=get_origin(typ))
+        return partial(
+            decode_dict, inner_key=inner_key, inner_val=inner_val, con=get_origin(typ)
+        )
     elif verb == PY2DDB:
-        return partial(encode_dict, inner=inner)
+        return partial(encode_dict, inner_key=inner_key, inner_val=inner_val)
 
 
 def sets(verb, typ, ctx):
@@ -169,7 +178,7 @@ def attrs(verb, typ, ctx):
     """
     A rule to represent attrs classes. This isn't trying to support hooks or any of that.
     """
-    inner_map = build_attribute_map(verb, typ, ctx, read_all=verb == PY2DDB)
+    inner_map = build_attribute_map(verb, typ, ctx)
     if inner_map is None:
         return
 
@@ -322,6 +331,7 @@ def dynamodb_ruleset(
         enums,
         sets,
         dicts,
+        stringify_keys,
         optionals,
         nulls,
         *extras,
@@ -461,8 +471,8 @@ def decode_dict(value, inner_key, inner_val, con):
     return con(((inner_key(key), inner_val(val)) for key, val in value.items()))
 
 
-def encode_dict(value, inner):
-    return {"M": {str(key): inner(val) for key, val in value.items()}}
+def encode_dict(value, inner_key, inner_val):
+    return {"M": {inner_key(key): inner_val(val) for key, val in value.items()}}
 
 
 def decode_map(value, inner_map, con):

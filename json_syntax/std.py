@@ -8,6 +8,9 @@ from .helpers import (
     INSP_JSON,
     INSP_PY,
     PATTERN,
+    STR2PY,
+    PY2STR,
+    INSP_STR,
 )
 from .action_v1 import (
     check_collection,
@@ -288,45 +291,29 @@ def sets(verb, typ, ctx):
         return pat.Array.homog(inner)
 
 
-def _stringly(verb, typ, ctx):
-    """
-    Rule to handle types that reliably convert directly to strings.
-
-    This is used internally by dicts.
-    """
-    for base in str, int:
-        if typ == base:
-            if verb == PATTERN and base == str:
-                return pat.String.any
-            if verb in (JSON2PY, PY2JSON):
-                return base
-            elif verb == INSP_PY:
-                return partial(check_isinst, typ=base)
-            elif verb in (INSP_JSON, PATTERN):
-                inspect = partial(check_parse_error, parser=base, error=ValueError)
-                return pat.String(typ.__name__, inspect) if verb == PATTERN else inspect
-    if typ in (datetime, time):
-        return
-    for rule in enums, iso_dates:
-        action = rule(verb=verb, typ=typ, ctx=ctx)
-        if action is not None:
-            return action
+_STRING = {
+    JSON2PY: STR2PY,
+    PY2JSON: PY2STR,
+    INSP_JSON: INSP_STR,
+    INSP_PY: INSP_PY,
+    PATTERN: PATTERN,
+}
 
 
 def dicts(verb, typ, ctx):
     """
     Handle a ``Dict[key, value]`` where key is a string, integer, date or enum type.
     """
-    if not has_origin(typ, (dict, OrderedDict), num_args=2):
+    if verb not in _STRING or not has_origin(typ, (dict, OrderedDict), num_args=2):
         return
     (key_type, val_type) = typ.__args__
-    key_type = _stringly(verb=verb, typ=key_type, ctx=ctx)
-    if key_type is None:
-        return
-    val_type = ctx.lookup(verb=verb, typ=val_type)
+    inner_key = ctx.lookup(verb=_STRING[verb], typ=key_type)
+    inner_val = ctx.lookup(verb=verb, typ=val_type)
     if verb in (JSON2PY, PY2JSON):
-        return partial(convert_mapping, key=key_type, val=val_type, con=get_origin(typ))
+        return partial(
+            convert_mapping, key=inner_key, val=inner_val, con=get_origin(typ)
+        )
     elif verb in (INSP_JSON, INSP_PY):
-        return partial(check_mapping, key=key_type, val=val_type, con=get_origin(typ))
+        return partial(check_mapping, key=inner_key, val=inner_val, con=get_origin(typ))
     elif verb == PATTERN:
-        return pat.Object.homog(key_type, val_type)
+        return pat.Object.homog(inner_key, inner_val)

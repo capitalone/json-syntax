@@ -9,6 +9,9 @@ JSON2PY = "json_to_python"
 PY2JSON = "python_to_json"
 INSP_JSON = "inspect_json"
 INSP_PY = "inspect_python"
+INSP_STR = "inspect_string"
+STR2PY = "string_to_python"
+PY2STR = "python_to_string"
 PATTERN = "show_pattern"
 NoneType = type(None)
 SENTINEL = object()
@@ -173,7 +176,7 @@ class _Context:
 
     def __str__(self):
         return "{}{}{}".format(
-            self.original, self.lead, "".join(reversed(self.context))
+            self.original, self.lead, "".join(map(str, reversed(self.context)))
         )
 
     def __repr__(self):
