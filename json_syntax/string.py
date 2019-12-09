@@ -29,7 +29,7 @@ See std.dicts for an example.
 def stringify_keys(verb, typ, ctx):
     if verb not in (STR2PY, PY2STR, INSP_STR):
         return
-    if typ in (str, int, bool):
+    if typ in (str, int):
         if verb == STR2PY:
             return typ
         elif verb == PY2STR:
