@@ -47,7 +47,7 @@ def attrs_classes(
     """
     if verb not in _SUPPORTED_VERBS:
         return
-    inner_map = build_attribute_map(verb, typ, ctx, read_all=verb == PY2JSON)
+    inner_map = build_attribute_map(verb, typ, ctx)
     if inner_map is None:
         return
 

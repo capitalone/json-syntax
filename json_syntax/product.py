@@ -101,7 +101,7 @@ def attr_map(verb, outer, ctx, gen):
     return tuple(result)
 
 
-def build_attribute_map(verb, typ, ctx, read_all):
+def build_attribute_map(verb, typ, ctx):
     """
     Examine an attrs or dataclass type and construct a list of attributes.
 
@@ -129,7 +129,7 @@ def build_attribute_map(verb, typ, ctx, read_all):
                 default=field.default,
             )
             for field in fields
-            if read_all or field.init
+            if field.init
         ),
     )
 
