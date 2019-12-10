@@ -4,7 +4,7 @@ This module constructs its own fake type and a rule to support it.
 This lets you construct a quick set of enums that are represented as strings.
 """
 
-from ..helpers import JSON2PY, PY2JSON, INSP_JSON, INSP_PY
+from ..helpers import JSON2PY, PY2JSON, INSP_JSON, INSP_PY, STR2PY, PY2STR, INSP_STR
 from functools import partial
 
 
@@ -37,7 +37,9 @@ class Flag(type):
         return cls(*elems) if isinstance(elems, tuple) else cls(elems)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}[{", ".join(map(repr, self.elems))}]'
+        return "{}[{}]".format(
+            self.__class__.__name__, ", ".join(map(repr, self.elems))
+        )
 
 
 def _check_flag(elems, value):
@@ -56,10 +58,12 @@ def _convert_flag(elems, value):
     """
     Checks the value is in elems and returns it.
     """
-    if value not in elems:
-        raise ValueError(f'Expect {value!r} to be one of {", ".join(map(repr, elems))}')
-
-    return value
+    if value in elems:
+        return value
+    else:
+        raise ValueError(
+            "Expect {!r} to be one of {}".format(value, ", ".join(map(repr, elems)))
+        )
 
 
 def flags(*, verb, typ, ctx):
@@ -70,7 +74,7 @@ def flags(*, verb, typ, ctx):
     """
     if not isinstance(typ, Flag):
         return
-    if verb in (JSON2PY, PY2JSON):
+    if verb in (JSON2PY, PY2JSON, STR2PY, PY2STR):
         return partial(_convert_flag, typ.elems)
-    elif verb in (INSP_JSON, INSP_PY):
+    elif verb in (INSP_JSON, INSP_PY, INSP_STR):
         return partial(_check_flag, typ.elems)
