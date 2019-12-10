@@ -4,7 +4,7 @@ This module constructs its own fake type and a rule to support it.
 This lets you construct a quick set of enums that are represented as strings.
 """
 
-from ..helpers import JSON2PY, PY2JSON, INSP_JSON, INSP_PY
+from ..helpers import JSON2PY, PY2JSON, INSP_JSON, INSP_PY, STR2PY, PY2STR, INSP_STR
 from functools import partial
 
 
@@ -70,7 +70,7 @@ def flags(*, verb, typ, ctx):
     """
     if not isinstance(typ, Flag):
         return
-    if verb in (JSON2PY, PY2JSON):
+    if verb in (JSON2PY, PY2JSON, STR2PY, PY2STR):
         return partial(_convert_flag, typ.elems)
-    elif verb in (INSP_JSON, INSP_PY):
+    elif verb in (INSP_JSON, INSP_PY, INSP_STR):
         return partial(_check_flag, typ.elems)
