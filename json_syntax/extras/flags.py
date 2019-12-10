@@ -37,7 +37,9 @@ class Flag(type):
         return cls(*elems) if isinstance(elems, tuple) else cls(elems)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}[{", ".join(map(repr, self.elems))}]'
+        return "{}[{}]".format(
+            self.__class__.__name__, ", ".join(map(repr, self.elems))
+        )
 
 
 def _check_flag(elems, value):
