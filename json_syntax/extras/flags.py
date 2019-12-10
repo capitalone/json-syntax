@@ -58,10 +58,12 @@ def _convert_flag(elems, value):
     """
     Checks the value is in elems and returns it.
     """
-    if value not in elems:
-        raise ValueError(f'Expect {value!r} to be one of {", ".join(map(repr, elems))}')
-
-    return value
+    if value in elems:
+        return value
+    else:
+        raise ValueError(
+            "Expect {!r} to be one of {}".format(value, ", ".join(map(repr, elems)))
+        )
 
 
 def flags(*, verb, typ, ctx):
