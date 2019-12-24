@@ -17,13 +17,16 @@ class Rules:
 
 
 class SoftMod:
-    def __init__(self, *modules):
+    def __init__(self, *modules, allow_SyntaxError=False):
         self.mods = mods = []
         for name in modules:
             try:
                 mods.append(import_module(name))
             except ImportError:
                 pass
+            except SyntaxError:
+                if not allow_SyntaxError:
+                    raise
 
     def __getattr__(self, name):
         for mod in self.mods:

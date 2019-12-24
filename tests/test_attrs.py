@@ -10,7 +10,7 @@ import attr
 from collections import namedtuple
 from typing import Tuple, Generic
 
-ann = SoftMod("tests.types_attrs_ann")
+ann = SoftMod("tests.types_attrs_ann", allow_SyntaxError=True)
 
 
 @attr.s
