@@ -63,7 +63,7 @@ jobs:
     docker:
       - image: circleci/python:3.8
     environment: *std_env
-    steps: *std_steps36
+    steps: *steps36
     working_directory: ~/json-syntax
 
 workflows:
