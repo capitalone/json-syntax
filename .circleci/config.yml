@@ -7,6 +7,7 @@ jobs:
       &std_env
       TERM: xterm
       LANG: en_US.UTF-8
+      PIP_DISABLE_PIP_VERSION_CHECK: 1
     working_directory: ~/json-syntax
     steps:
       &steps34

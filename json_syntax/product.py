@@ -10,7 +10,7 @@ try:
     from typing import _TypedDictMeta
 except ImportError:
     try:
-        from typing_extensions import _TypeDictMeta  # noqa
+        from typing_extensions import _TypedDictMeta  # noqa
     except ImportError:
         pass
 
@@ -181,7 +181,7 @@ def build_named_tuple_map(verb, typ, ctx):
             )
             for name, inner in fields
         ),
-        typ_args={},  # A named tuple type can't accept generic arguments.
+        typ_args=None,  # A named tuple type can't accept generic arguments.
     )
 
 
@@ -206,5 +206,5 @@ def build_typed_dict_map(verb, typ, ctx):
             Attribute(name=name, typ=inner, is_required=True, default=SENTINEL)
             for name, inner in typ.__annotations__.items()
         ),
-        typ_args={},  # A typed dict can't accept generic arguments.
+        typ_args=None,  # A typed dict can't accept generic arguments.
     )
