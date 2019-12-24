@@ -15,13 +15,13 @@ jobs:
       - run:
           name: Set up virtualenv
           command: |
-            pip install poetry>=1.0.0
-            poetry install
+            pip install --user 'poetry>=1'
+            python -m poetry install
 
       - run:
           name: Run tests
           command: |
-            poetry run pytest tests/
+            python -m poetry run pytest tests/
 
       - store_artifacts:  # If a property test fails, this contains the example that failed.
           path: ".hypothesis"
@@ -43,13 +43,13 @@ jobs:
       - run:
           name: Set up virtualenv
           command: |
-            pip install poetry>=1.0.0
-            poetry install
+            pip install --user 'poetry>=1'
+            python -m poetry install
 
       - run:
           name: Run tests
           command: |
-            poetry run pytest --doctest-modules json_syntax/ tests/
+            python -m poetry run pytest --doctest-modules json_syntax/ tests/
 
       - store_artifacts:  # If a property test fails, this contains the example that failed.
           path: ".hypothesis"
