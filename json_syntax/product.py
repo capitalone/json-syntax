@@ -2,7 +2,8 @@
 A module to help with product types in Python.
 """
 
-from .helpers import issub_safe, resolve_fwd_ref, SENTINEL
+from .helpers import SENTINEL
+from .types import issub_safe, resolve_fwd_ref, rewrite_typevars
 
 _TypedDictMeta = None
 try:
@@ -74,15 +75,18 @@ def is_attrs_field_required(field):
         return factory in _attrs_missing_values
 
 
-def attr_map(verb, outer, ctx, gen):
+def attr_map(verb, outer, ctx, gen, typ_args=None):
     result = []
     failed = []
+    typ_args = typ_args
     for att in gen:
         if att.typ is not None:
             try:
                 att.typ = resolve_fwd_ref(att.typ, outer)
             except TypeError:
                 failed.append("resolve fwd ref {} for {}".format(att.typ, att.name))
+            else:
+                att.typ = rewrite_typevars(att.typ, typ_args)
         if att.inner is None:
             att.inner = ctx.lookup(
                 verb=verb, typ=resolve_fwd_ref(att.typ, outer), accept_missing=True
@@ -101,7 +105,7 @@ def attr_map(verb, outer, ctx, gen):
     return tuple(result)
 
 
-def build_attribute_map(verb, typ, ctx):
+def build_attribute_map(verb, typ, ctx, typ_args=None):
     """
     Examine an attrs or dataclass type and construct a list of attributes.
 
@@ -121,7 +125,7 @@ def build_attribute_map(verb, typ, ctx):
         verb,
         typ,
         ctx,
-        (
+        gen=(
             Attribute(
                 name=field.name,
                 typ=field.type,
@@ -131,6 +135,7 @@ def build_attribute_map(verb, typ, ctx):
             for field in fields
             if field.init
         ),
+        typ_args=typ_args,
     )
 
 
@@ -167,7 +172,7 @@ def build_named_tuple_map(verb, typ, ctx):
         verb,
         typ,
         ctx,
-        (
+        gen=(
             Attribute(
                 name=name,
                 typ=inner,
@@ -176,6 +181,7 @@ def build_named_tuple_map(verb, typ, ctx):
             )
             for name, inner in fields
         ),
+        typ_args={},  # A named tuple type can't accept generic arguments.
     )
 
 
@@ -196,8 +202,9 @@ def build_typed_dict_map(verb, typ, ctx):
         verb,
         typ,
         ctx,
-        (
+        gen=(
             Attribute(name=name, typ=inner, is_required=True, default=SENTINEL)
             for name, inner in typ.__annotations__.items()
         ),
+        typ_args={},  # A typed dict can't accept generic arguments.
     )

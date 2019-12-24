@@ -1,68 +1,54 @@
 import attr
-from typing import NamedTuple
 
-from tests.types_attrs_noann import (  # noqa
-    flat_types,
-    hook_types,
-    Hooks,
-    Dict1,
-    Named1,
-    Named2,
-)
-
-try:
-    from dataclasses import dataclass
-except ImportError:
-    dataclass = None
-
-try:
-    from typing import TypedDict
-except ImportError:
-    TypedDict = None
+from .common import dataclasses as dc, typing as t
+from .types_attrs_common import Hooks, T
 
 
 @attr.s(auto_attribs=True)
-class Flat2:
+class Flat:
     a: int
     b: str = "default"
-
-
-flat_types.append(Flat2)
-if dataclass:
-
-    @dataclass
-    class Flat3:
-        a: int
-        b: str = "default"
-
-    flat_types.append(Flat3)
 
 
 @attr.s(auto_attribs=True)
-class Hook2(Hooks):
+class GenFlat(t.Generic[T]):
+    a: T
+    b: str = "default"
+
+
+@attr.s(auto_attribs=True)
+class Hook(Hooks):
     a: int
     b: str = "default"
 
 
-hook_types.append(Hook2)
-if dataclass:
+class Named(t.NamedTuple):
+    a: int
+    b: str = "default"
 
-    @dataclass
-    class Hook3(Hooks):
+
+class Dict(t.TypedDict):
+    a: int
+    b: str
+
+
+if dc.dataclass:
+
+    @dc.dataclass
+    class FlatDc:
         a: int
         b: str = "default"
 
-    hook_types.append(Hook3)
+    @dc.dataclass
+    class GenFlatDc(t.Generic[T]):
+        a: T
+        b: str = "default"
 
-
-class Named3(NamedTuple):
-    a: int
-    b: str = "default"
-
-
-Dict2 = None
-if TypedDict:
-
-    class Dict2(TypedDict):
+    @dc.dataclass
+    class HookDc(Hooks):
         a: int
-        b: str
+        b: str = "default"
+
+
+else:
+    FlatDc = GenFlatDc = HookDc = None

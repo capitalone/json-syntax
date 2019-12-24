@@ -1,14 +1,15 @@
 version: 2.1
 jobs:
-  test-35:
+  test-34:
     docker:
-      - image: circleci/python:3.5
+      - image: circleci/python:3.4
     environment:
       &std_env
       TERM: xterm
       LANG: en_US.UTF-8
     working_directory: ~/json-syntax
     steps:
+      &steps34
       - checkout
       - run:
           name: Set up virtualenv
@@ -24,12 +25,19 @@ jobs:
       - store_artifacts:  # If a property test fails, this contains the example that failed.
           path: ".hypothesis"
           destination: ".hypothesis"
+  test-35:
+    docker:
+      - image: circleci/python:3.5
+    environment: *std_env
+    steps: *steps34
+    working_directory: ~/json-syntax
   test-36:
     docker:
       - image: circleci/python:3.6
     environment: *std_env
+    working_directory: ~/json-syntax
     steps:
-      &std_steps
+      &steps36
       - checkout
       - run:
           name: Set up virtualenv
@@ -45,23 +53,23 @@ jobs:
       - store_artifacts:  # If a property test fails, this contains the example that failed.
           path: ".hypothesis"
           destination: ".hypothesis"
-    working_directory: ~/json-syntax
   test-37:
     docker:
       - image: circleci/python:3.7
     environment: *std_env
-    steps: *std_steps
+    steps: *steps36
     working_directory: ~/json-syntax
   test-38:
     docker:
       - image: circleci/python:3.8
     environment: *std_env
-    steps: *std_steps
+    steps: *std_steps36
     working_directory: ~/json-syntax
 
 workflows:
   test:
     jobs:
+      - test-34
       - test-35
       - test-36
       - test-37

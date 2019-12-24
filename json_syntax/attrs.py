@@ -10,6 +10,7 @@ from .action_v1 import (
 )
 from . import pattern as pat
 from .product import build_attribute_map, build_named_tuple_map, build_typed_dict_map
+from .types import is_generic, get_origin, get_argument_map
 
 from functools import partial
 
@@ -47,7 +48,13 @@ def attrs_classes(
     """
     if verb not in _SUPPORTED_VERBS:
         return
-    inner_map = build_attribute_map(verb, typ, ctx)
+    if is_generic(typ):
+        typ_args = get_argument_map(typ)
+        typ = get_origin(typ)
+    else:
+        typ_args = None
+
+    inner_map = build_attribute_map(verb, typ, ctx, typ_args)
     if inner_map is None:
         return
 
