@@ -59,5 +59,5 @@ def std_ruleset(
         stringify_keys,
         unions,
         *extras,
-        cache=cache,
+        cache=cache
     )

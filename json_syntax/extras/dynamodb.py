@@ -335,7 +335,7 @@ def dynamodb_ruleset(
         optionals,
         nulls,
         *extras,
-        cache=cache,
+        cache=cache
     )
 
 
