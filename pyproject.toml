@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "json-syntax"
-version = "2.1.1"
+version = "2.2.0"
 description = "Generates functions to convert Python classes to JSON dumpable objects."
 authors = ["Ben Samuel <bsamuel@unitedincome.com>"]
 license = "MIT"
@@ -15,6 +15,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.4"
 python-dateutil = {version="^2.7", python = "<3.7"}
+typing = {version = "^3.7", python = "<3.5"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.1"
@@ -23,7 +24,6 @@ pytest-cov = "^2.6"
 black = {version = "^19.3-beta.0", allow-prereleases = true, python = ">=3.7"}
 hypothesis = "^4"
 dataclasses = {version="0.4", python = ">=3.6,<3.7"}
-typing = {version = "^3.7", python = "<3.5"}
 typing-extensions = {version = "^3.7", python = "<3.8"}
 
 [tool.black]
