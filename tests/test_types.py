@@ -77,10 +77,7 @@ def test_resolve_fwd_ref():
 def test_resolve_fwd_ref_bad_context():
     "Test that resolve_fwd_ref returns the original if the module can't be determined."
 
-    try:
-        Forward = t.ForwardRef
-    except AttributeError:
-        Forward = t._ForwardRef
+    Forward = t.ForwardRef or t._ForwardRef
     subj = Forward("AnotherClass")
     actual = tt.resolve_fwd_ref(subj, "dummy")
 
