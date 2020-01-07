@@ -36,7 +36,7 @@ def get_origin(typ):
     try:
         t_origin = typ.__origin__
     except AttributeError:
-        return typ
+        return _origin_pts(typ)
     else:
         return _origin_pts(t_origin)
 
