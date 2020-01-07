@@ -55,7 +55,7 @@ def get_generic_origin(typ):
         return None
 
     origin = typ.__origin__
-    if not is_generic(origin) and not hasattr(origin, '__parameters__'):
+    if not is_generic(origin) and not hasattr(origin, "__parameters__"):
         origin = _lookup_generic_origin(origin)
 
     return origin
@@ -180,6 +180,7 @@ if python_minor < (3, 7):
         """
         return None
 
+
 else:
 
     def _origin_pts(origin):
@@ -191,7 +192,9 @@ else:
         """
         return origin
 
-    def _lookup_generic_origin(typ, _stp={stable: prov for prov, stable in _make_map()}):
+    def _lookup_generic_origin(
+        typ, _stp={stable: prov for prov, stable in _make_map()}
+    ):
         """
         Find the generic type corresponding to a regular type returned by .__origin__
         """
