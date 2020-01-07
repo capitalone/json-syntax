@@ -32,11 +32,25 @@ class Dict(t.TypedDict):
     b: str
 
 
-@attr.s(auto_attribs=True, slots=True)
+@attr.s(auto_attribs=True)
 class GenExample(t.Generic[T, U]):
     body: T
     count: int
     messages: t.List[U]
+
+
+try:
+
+    @attr.s(auto_attribs=True, slots=True)
+    class GenExampleSlots(t.Generic[T, U]):
+        body: T
+        count: int
+        messages: t.List[U]
+
+
+except TypeError:
+    # Slots don't work with Generic on older versions of typing.
+    GenExampleSlots = None
 
 
 if dc.dataclass:

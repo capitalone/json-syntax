@@ -39,6 +39,19 @@ class GenExample(Generic[T, U]):
     messages = attr.ib(type=t.List[U])
 
 
+try:
+
+    @attr.s(slots=True)
+    class GenExampleSlots(Generic[T, U]):
+        body = attr.ib(type=T)
+        count = attr.ib(type=int)
+        messages = attr.ib(type=t.List[U])
+
+
+except TypeError:
+    GenExampleSlots = None
+
+
 class Fail:
     def lookup(self, verb, typ, accept_missing):
         raise RuntimeError("Should not be called in this test")
@@ -128,8 +141,20 @@ def test_attrs_hooks(HookCls):
     assert inspect({"_type_": "Hook"})
 
 
-@pytest.mark.parametrize("GenClass", [GenExample, ann.GenExample, ann.GenExampleDc])
+@pytest.mark.parametrize(
+    "GenClass",
+    [
+        GenExample,
+        GenExampleSlots,
+        ann.GenExample,
+        ann.GenExampleSlots,
+        ann.GenExampleDc,
+    ],
+)
 def test_attrs_generic(GenClass):
+    if GenClass is None:
+        pytest.skip()
+
     @attr.s
     class Top:
         nested = attr.ib(type=GenClass[GenClass[str, str], str])
