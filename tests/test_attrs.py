@@ -1,14 +1,15 @@
 import pytest
 
-from .common import SoftMod, typing as t
-from .types_attrs_common import Hooks, T
+from .common import SoftMod, typing as t, Rules
+from .types_attrs_common import Hooks, T, U
 
 from json_syntax import attrs as at
+from json_syntax import std
 from json_syntax.helpers import JSON2PY, PY2JSON, INSP_PY, INSP_JSON
 
 import attr
 from collections import namedtuple
-from typing import Tuple, Generic
+from typing import Tuple, Generic, List
 
 ann = SoftMod("tests.types_attrs_ann", allow_SyntaxError=True)
 
@@ -29,6 +30,13 @@ class GenFlat(Generic[T]):
 class Hook1(Hooks):
     a = attr.ib(type=int)
     b = attr.ib("default", type=str)
+
+
+@attr.s
+class GenExample(Generic[T, U]):
+    body = attr.ib(type=T)
+    count = attr.ib(type=int)
+    messages = attr.ib(type=t.List[U])
 
 
 class Fail:
@@ -118,6 +126,48 @@ def test_attrs_hooks(HookCls):
     assert not inspect({"a": 33, "b": "foo"})
     assert inspect({"_type_": "Hook", "a": 33, "b": "foo"})
     assert inspect({"_type_": "Hook"})
+
+
+@pytest.mark.parametrize("GenClass", [GenExample, ann.GenExample, ann.GenExampleDc])
+def test_attrs_generic(GenClass):
+    @attr.s
+    class Top:
+        nested = attr.ib(type=GenClass[GenClass[str, str], str])
+        list_of = attr.ib(type=List[GenClass[Tuple[Flat, ...], int]])
+
+    rules = Rules(at.attrs_classes, std.atoms, std.lists)
+    py_val = Top(
+        nested=GenClass(
+            body=GenClass(body="body", count=5, messages=["msg1", "msg2"]),
+            count=3,
+            messages=["msg3", "msg4"],
+        ),
+        list_of=[
+            GenClass(body=(Flat(a=1), Flat(a=2, b="three")), count=4, messages=[6, 7])
+        ],
+    )
+    j_val = {
+        "list_of": [
+            {"body": [{"a": 1}, {"a": 2, "b": "three"}], "count": 4, "messages": [6, 7]}
+        ],
+        "nested": {
+            "body": {"body": "body", "count": 5, "messages": ["msg1", "msg2"]},
+            "count": 3,
+            "messages": ["msg3", "msg4"],
+        },
+    }
+
+    encoder = at.attrs_classes(verb=PY2JSON, typ=Top, ctx=rules)
+    assert encoder(py_val) == j_val
+
+    decoder = at.attrs_classes(verb=JSON2PY, typ=Top, ctx=rules)
+    assert decoder(j_val) == py_val
+
+    inspect = at.attrs_classes(verb=INSP_PY, typ=Top, ctx=rules)
+    assert inspect(py_val)
+
+    inspect = at.attrs_classes(verb=INSP_JSON, typ=Top, ctx=rules)
+    assert inspect(j_val)
 
 
 class Ctx2:

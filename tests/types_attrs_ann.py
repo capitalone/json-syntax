@@ -1,7 +1,7 @@
 import attr
 
 from .common import dataclasses as dc, typing as t
-from .types_attrs_common import Hooks, T
+from .types_attrs_common import Hooks, T, U
 
 
 @attr.s(auto_attribs=True)
@@ -32,6 +32,13 @@ class Dict(t.TypedDict):
     b: str
 
 
+@attr.s(auto_attribs=True, slots=True)
+class GenExample(t.Generic[T, U]):
+    body: T
+    count: int
+    messages: t.List[U]
+
+
 if dc.dataclass:
 
     @dc.dataclass
@@ -49,6 +56,12 @@ if dc.dataclass:
         a: int
         b: str = "default"
 
+    @dc.dataclass
+    class GenExampleDc(t.Generic[T, U]):
+        body: T
+        count: int
+        messages: t.List[U]
+
 
 else:
-    FlatDc = GenFlatDc = HookDc = None
+    FlatDc = GenFlatDc = HookDc = GenericExampleDc = None

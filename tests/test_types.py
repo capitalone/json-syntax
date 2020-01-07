@@ -1,12 +1,26 @@
+import pytest
+
 from json_syntax import types as tt
 
-import typing as t
+from .common import typing as t, SoftMod
+from .types_attrs_common import T, U
+
+import attr
+
+ann = SoftMod("tests.types_attrs_ann", allow_SyntaxError=True)
+
+
+@attr.s
+class GenExample(t.Generic[T, U]):
+    body = attr.ib(type=T)
+    count = attr.ib(type=int)
+    messages = attr.ib(type=t.List[U])
 
 
 def test_has_origin_not_typing():
     "Test that has_origin disregards a type value if it's not from `typing`."
 
-    assert not tt.has_origin(list, list)
+    assert tt.has_origin(list, list)
 
 
 def test_has_origin_handle_tuple():
@@ -71,3 +85,38 @@ def test_resolve_fwd_ref_bad_context():
     actual = tt.resolve_fwd_ref(subj, "dummy")
 
     assert actual is subj
+
+
+@pytest.mark.parametrize(
+    "GenClass, origin",
+    [
+        (GenExample, None),
+        (GenExample[str, int], GenExample),
+        (t.List[int], t.List),
+        (t.List["int"], t.List),
+        (t.List, None),
+        (t.Union[int, str], None),
+        (int, None),
+    ],
+)
+def test_get_generic_origin(GenClass, origin):
+    "Test that get_generic_origin finds the origin class, unless the class is not generic."
+    assert tt.get_generic_origin(GenClass) == origin
+
+
+@pytest.mark.parametrize(
+    "GenClass, origin",
+    [
+        (GenExample, GenExample),
+        (GenExample[str, int], GenExample),
+        (t.List[int], list),
+        (t.List["int"], list),
+        (t.List, list),
+        (t.Union[int, str], t.Union),
+        (t.Union, t.Union),
+        (int, int),
+    ],
+)
+def test_get_origin(GenClass, origin):
+    "Test that get_generic_origin finds the origin class, unless the class is not generic."
+    assert tt.get_origin(GenClass) == origin

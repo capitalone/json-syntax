@@ -180,6 +180,24 @@ The standard rules don't support:
  2. Using type variables.
  3. Any kind of callable, coroutine, file handle, etc.
 
+#### Support for deriving from Generic
+
+There is experimental support for deriving from `typing.Generic`. An `attrs` or `dataclass`
+may declare itself a generic class. If another class invokes it as `YourGeneric[Param, Param]`,
+those `Param` types will be substituted into the fields during encoded. This is useful to construct
+parameterized container types. Example:
+
+    @attr.s(auto_attribs=True)
+    class Wrapper(Generic[T, M]):
+        body: T
+        count: int
+        messages: List[M]
+
+    @attr.s(auto_attribs=True)
+    class Message:
+        first: Wrapper[str, str]
+        second: Wrapper[Dict[str, str], int]
+
 #### Unions
 
 A union type lets you present alternate types that the converters will attempt in

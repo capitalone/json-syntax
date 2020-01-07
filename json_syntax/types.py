@@ -1,3 +1,4 @@
+import collections as c
 from importlib import import_module
 import logging
 import sys
@@ -35,7 +36,7 @@ def get_origin(typ):
     try:
         t_origin = typ.__origin__
     except AttributeError:
-        return None
+        return typ
     else:
         return _origin_pts(t_origin)
 
@@ -46,15 +47,18 @@ def get_args(typ):
 
 def get_generic_origin(typ):
     """
-    Get the generic origin of a fully specified type.
+    Get the generic origin of a fully parametrized generic type.
 
     E.g. get_generic_origin(typing.List[int]) == typing.List
     """
-    if getattr(typ, "_special", False) is True:
-        origin = getattr(t, typ._name)
-    else:
-        origin = getattr(typ, "__origin__", None)
-    return origin if hasattr(origin, "__parameters__") else None
+    if not is_generic(typ) or typ.__parameters__:
+        return None
+
+    origin = typ.__origin__
+    if not is_generic(origin) and not hasattr(origin, '__parameters__'):
+        origin = _lookup_generic_origin(origin)
+
+    return origin
 
 
 def get_argument_map(typ):
@@ -99,10 +103,10 @@ def rewrite_typevars(typ, arg_map):
     except (KeyError, TypeError):
         pass
 
+    origin = get_generic_origin(typ) or typ
     try:
         args = typ.__args__
     except AttributeError:
-        # Not a generic type, we can bail.
         return typ
     else:
         new_args = tuple(rewrite_typevars(arg, arg_map) for arg in args)
@@ -111,7 +115,7 @@ def rewrite_typevars(typ, arg_map):
             return typ
         else:
             # If it passes, construct a new type with the rewritten arguments.
-            return get_generic_origin(typ)[new_args]
+            return origin[new_args]
 
 
 try:
@@ -126,16 +130,17 @@ def is_generic(typ):
 
     `typing` module notes:
 
-       3.5: typing.List[int] is an instance of typing._GenericAlias
+       3.4, 3.5: typing.List[int] is an instance of typing._GenericAlias
        3.6, 3.7: typing.List[int] is an instance of typing.GenericMeta
     """
     return isinstance(typ, _Generic)
 
 
-if python_minor < (3, 7):
-    import collections as c
+def _make_map():
+    from collections import abc
 
-    _map = [
+    seen = set()
+    for gen, con in [
         (t.Tuple, tuple),
         (t.List, list),
         (t.Dict, dict),
@@ -143,37 +148,54 @@ if python_minor < (3, 7):
         (t.Type, type),
         (t.Set, set),
         (t.FrozenSet, frozenset),
-    ]
-    seen = {prov for prov, stable in _map}
-    from collections import abc
+    ]:
+        seen.add(gen)
+        yield gen, con
 
     for name, generic in vars(t).items():
         if not is_generic(generic) or generic in seen:
             continue
         for check in getattr(abc, name, None), getattr(c, name.lower(), None):
             if check:
-                _map.append((generic, check))
+                yield generic, check
                 break
-    _pts = {prov: stable for prov, stable in _map}
 
-    def _origin_pts(origin, _pts=_pts):
+
+if python_minor < (3, 7):
+
+    def _origin_pts(origin, _pts=dict(_make_map())):
         """
-        Convert the __origin__ of a generic type returned by the provisional typing API (python3.5) to the stable
+        Convert the __origin__ of a generic type returned by the provisional typing API (python3.4+) to the stable
         version.
 
         Don't use this, just use get_origin.
         """
         return _pts.get(origin, origin)
 
-    del _pts
-    del _map
-    del seen
-    del abc
-    del c
+    def _lookup_generic_origin(typ):
+        """
+        Find the generic type corresponding to a regular type returned by .__origin__
+
+        Prefer using get_generic_origin to this.
+        """
+        return None
+
 else:
 
     def _origin_pts(origin):
+        """
+        Convert the __origin__ of a generic type returned by the provisional typing API (python3.4+) to the stable
+        version.
+
+        Don't use this, just use get_origin.
+        """
         return origin
+
+    def _lookup_generic_origin(typ, _stp={stable: prov for prov, stable in _make_map()}):
+        """
+        Find the generic type corresponding to a regular type returned by .__origin__
+        """
+        return _stp.get(typ, None)
 
 
 def issub_safe(sub, sup):
@@ -215,3 +237,6 @@ if _eval_type is None:
     # If typing's internal API changes, we have tests that break.
     def resolve_fwd_ref(typ, context_class):  # noqa
         return typ
+
+
+del _make_map
