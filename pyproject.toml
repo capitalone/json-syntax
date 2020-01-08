@@ -19,17 +19,61 @@ typing = {version = "^3.7", python = "<3.5"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.1"
-attrs = "^18.2"
+attrs = "^19.2"
 pytest-cov = "^2.6"
-black = {version = "^19.3-beta.0", allow-prereleases = true, python = ">=3.7"}
 hypothesis = "^4"
 dataclasses = {version="0.4", python = ">=3.6,<3.7"}
 typing-extensions = {version = "^3.7", python = "<3.8"}
+# Install these tools via pipx.
+# black = {version = "^19.3-beta.0", allow-prereleases = true, python = ">=3.7"}
+# dephell = {version = '^0.8.0', python = '>=3.6'}
 
 [tool.black]
 line-length = 88
 target-version = ["py34"]
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.0"]
 build-backend = "poetry.masonry.api"
+
+[tool.dephell.setup]
+# dephell deps convert -e setup; then pip install -e path/to/json_syntax will work
+from = {format = "poetry", path = "pyproject.toml"}
+to = {format = 'setuppy', path = "setup.py"}
+
+[tool.dephell.req]
+# Use `dephell deps convert -e req` to generate requirements.txt.
+from = {format = "poetry", path = "pyproject.toml"}
+to = {format = 'pip', path = "requirements.txt"}
+
+[tool.dephell.test34.docker]
+# dephell docker run -e test34 pip install -r requirements.txt
+# dephell docker run -e test34 pytest tests/
+container = "test34"
+repo = "python"
+tag = "3.4"
+
+[tool.dephell.test35.docker]
+container = "test35"
+repo = "python"
+tag = "3.5"
+
+[tool.dephell.test36.docker]
+container = "test36"
+repo = "python"
+tag = "3.6"
+
+[tool.dephell.test37.docker]
+container = "test37"
+repo = "python"
+tag = "3.7"
+
+[tool.dephell.test38.docker]
+container = "test38"
+repo = "python"
+tag = "3.8"
+
+[tool.dephell.test39.docker]
+container = "test39"
+repo = "python"
+tag = "3.9-rc"

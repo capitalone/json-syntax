@@ -365,28 +365,19 @@ This package is maintained via the [poetry][] tool. Some useful commands:
 
  1. Setup: `poetry install`
  2. Run tests: `poetry run pytest tests/`
- 3. Reformat: `poetry run black json_syntax/ tests/`
+ 3. Reformat: `black json_syntax/ tests/`
+ 4. Generate setup.py: `dephell deps convert -e setup`
+ 5. Generate requirements.txt: `dephell deps convert -e req`
 
-### Setting up tox
+### Running tests via docker
 
-You'll want pyenv, then install the pythons:
+The environments for 3.4 through 3.9 are in `pyproject.toml`, so just run:
 
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-    pyenv install --list | egrep '^ *3\.[4567]|^ *pypy3.5'
-    # figure out what versions you want
-    for v in 3.4.9 3.5.10 ...; do
-       pyenv install $v
-       PYENV_VERSION=$v python get-pip.py
-    done
-
-Once you install `tox` in your preferred python, running it is just `tox`. (Note: this is
-largely redundant as the build is configured to all the different pythons on Circle.)
-
-### Contributor roll call
-
-* @bsamuel-ui -- Ben Samuel
-* @dschep
-* @rugheid
+    dephell deps convert -e req  # Create requirements.txt
+    dephell docker run -e test34 pip install -r requirements.txt
+    dephell docker run -e test34 pytest tests/
+    dephell docker shell -e test34 pytest tests/
+    dephell docker destroy -e test34
 
 ### Notes
 
