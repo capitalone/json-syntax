@@ -26,7 +26,7 @@ def has_origin(typ, origin, num_args=None):
     t_origin = get_origin(typ)
     if not isinstance(origin, tuple):
         origin = (origin,)
-    return t_origin in origin and (num_args is None or len(typ.__args__) == num_args)
+    return t_origin in origin and (num_args is None or len(get_args(typ)) == num_args)
 
 
 def get_origin(typ):
@@ -38,11 +38,11 @@ def get_origin(typ):
     except AttributeError:
         return _origin_pts(typ)
     else:
-        return typ if t_origin is None else _origin_pts(t_origin)
+        return _origin_pts(t_origin or typ)
 
 
 def get_args(typ):
-    return getattr(typ, "__args__", None)
+    return getattr(typ, "__args__", ())
 
 
 def get_generic_origin(typ):
@@ -51,7 +51,7 @@ def get_generic_origin(typ):
 
     E.g. get_generic_origin(typing.List[int]) == typing.List
     """
-    if not is_generic(typ) or typ.__parameters__:
+    if not is_parametrized(typ):
         return None
 
     origin = typ.__origin__
@@ -163,14 +163,14 @@ def _make_map():
 
 if python_minor < (3, 7):
 
-    def _origin_pts(origin, _pts=dict(_make_map())):
+    def _origin_pts(typ, _pts=dict(_make_map())):
         """
         Convert the __origin__ of a generic type returned by the provisional typing API (python3.4+) to the stable
         version.
 
         Don't use this, just use get_origin.
         """
-        return _pts.get(origin, origin)
+        return _pts.get(typ, typ)
 
     def _lookup_generic_origin(typ):
         """
@@ -180,6 +180,16 @@ if python_minor < (3, 7):
         """
         return None
 
+    def is_parametrized(typ):
+        """
+        Determine if the type is both generic and fully realized; no free parameters. Parameters *may* be specified by type vars.
+
+        This function works around weirdness in pre-3.7 where parameters will be set if TypeVars are specified.
+        """
+        if not is_generic(typ):
+            return False
+        args = typ.__args__ or ()
+        return all(param in args for param in typ.__parameters__)
 
 else:
 
@@ -200,6 +210,11 @@ else:
         """
         return _stp.get(typ, None)
 
+    def is_parametrized(typ):
+        """
+        Determine if the type is both generic and fully realized; no free parameters. Parameters *may* be specified by type vars.
+        """
+        return is_generic(typ) and not typ.__parameters__
 
 def issub_safe(sub, sup):
     """
