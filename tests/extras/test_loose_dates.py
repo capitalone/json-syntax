@@ -11,7 +11,7 @@ from datetime import date, datetime
     python_minor < (3, 7), reason="datetime.isoformat not supported before python 3.7"
 )
 def test_iso_dates_loose():
-    "Test the iso_dates_loose handles dates using ISO8601, accepting datetimes as input to dates."
+    "Test the iso_dates_loose handles dates using ISO8601 and accepts datetimes."
 
     decoder = exam.iso_dates_loose(verb=JSON2PY, typ=date, ctx=Rules())
     assert decoder("1776-07-04") == date(1776, 7, 4)

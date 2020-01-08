@@ -32,12 +32,14 @@ except ImportError:
 
 class Attribute:
     """
-    Generic class to describe an attribute for a product type that can be represented as, e.g., a JSON map.
+    Generic class to describe an attribute for a product type that can be represented as,
+    e.g., a JSON map.
 
-    An Attribute is associated with an action, specifically, its "inner" field directs how to process the inside type,
-    not necessarily what the inside type is.
+    An Attribute is associated with an action, specifically, its "inner" field directs how
+    to process the inside type, not necessarily what the inside type is.
 
-    See the various build_* commands to generate attribute maps. (These are really just lists of Attribute instances.)
+    See the various build_* commands to generate attribute maps. (These are really just
+    lists of Attribute instances.)
 
     Fields:
       name: the attribute name
@@ -109,7 +111,8 @@ def build_attribute_map(verb, typ, ctx, typ_args=None):
     """
     Examine an attrs or dataclass type and construct a list of attributes.
 
-    Returns a list of Attribute instances, or None if the type is not an attrs or dataclass type.
+    Returns a list of Attribute instances, or None if the type is not an attrs or dataclass
+    type.
     """
     try:
         fields = typ.__attrs_attrs__

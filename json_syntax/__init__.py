@@ -1,6 +1,6 @@
 """
-The JSON syntax library is a combinatorial parser / generator library for managing conversion of Python objects to and
-from common JSON types.
+The JSON syntax library is a combinatorial parser / generator library for managing
+conversion of Python objects to and from common JSON types.
 
 It's not strictly limited to JSON, but that's the major use case.
 """
@@ -39,9 +39,11 @@ def std_ruleset(
     cache=None,
 ):
     """
-    Constructs a RuleSet with the provided rules. The arguments here are to make it easy to override.
+    Constructs a RuleSet with the provided rules. The arguments here are to make it easy to
+    override.
 
-    For example, to replace ``decimals`` with ``decimals_as_str`` just call ``std_ruleset(decimals=decimals_as_str)``
+    For example, to replace ``decimals`` with ``decimals_as_str`` just call
+    ``std_ruleset(decimals=decimals_as_str)``
     """
     return custom(
         enums,

@@ -81,13 +81,15 @@ def floats(verb, typ, ctx):
     """
     Rule to handle floats passing NaNs through unaltered.
 
-    JSON technically recognizes integers and floats. Many JSON generators will represent floats with integral value as
-    integers. Thus, this rule will convert both integers and floats in JSON to floats in Python.
+    JSON technically recognizes integers and floats. Many JSON generators will represent
+    floats with integral value as integers. Thus, this rule will convert both integers and
+    floats in JSON to floats in Python.
 
-    Python's standard JSON libraries treat `nan` and `inf` as special constants, but this is not standard JSON.
+    Python's standard JSON libraries treat `nan` and `inf` as special constants, but this is
+    not standard JSON.
 
-    This rule simply treats them as regular float values. If you want to catch them, you can set ``allow_nan=False``
-    in ``json.dump()``.
+    This rule simply treats them as regular float values. If you want to catch them, you can
+    set ``allow_nan=False`` in ``json.dump()``.
     """
     if typ == float:
         if verb in (JSON2PY, PY2JSON):
@@ -104,7 +106,8 @@ def floats_nan_str(verb, typ, ctx):
     """
     Rule to handle floats passing NaNs through as strings.
 
-    Python's standard JSON libraries treat `nan` and `inf` as special constants, but this is not standard JSON.
+    Python's standard JSON libraries treat `nan` and `inf` as special constants, but this is
+    not standard JSON.
 
     This rule converts special constants to string names.
     """
@@ -127,8 +130,8 @@ def decimals(verb, typ, ctx):
 
     This rule requires that your JSON library has decimal support, e.g. simplejson.
 
-    Other JSON processors may convert values to and from floating-point; if that's a concern, consider
-    `decimals_as_str`.
+    Other JSON processors may convert values to and from floating-point; if that's a
+    concern, consider `decimals_as_str`.
 
     This rule will fail if passed a special constant.
     """
@@ -167,8 +170,8 @@ def iso_dates(verb, typ, ctx):
 
     This simply uses the `fromisoformat` and `isoformat` methods of `date` and `datetime`.
 
-    There is a loose variant in the examples that will accept a datetime in a date. A datetime always accepts both
-    dates and datetimes.
+    There is a loose variant in the examples that will accept a datetime in a date. A
+    datetime always accepts both dates and datetimes.
     """
     if typ not in (date, datetime, time, timedelta):
         return

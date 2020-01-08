@@ -34,7 +34,7 @@ def test_simple_cache_get():
 
 @pytest.mark.filterwarnings("error")
 def test_simple_cache_flight():
-    "Test that the SimpleCache inflight -> complete mechanism produces a valid forward action."
+    "Test that the SimpleCache inflight -> complete mechanism produces a forward action."
 
     subj = cache.SimpleCache()
 

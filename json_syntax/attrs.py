@@ -122,11 +122,11 @@ def named_tuples(verb, typ, ctx):
 
 def typed_dicts(verb, typ, ctx):
     """
-    Handle the TypedDict product type. This allows you to construct a dict with specific (string) keys, which
-    is often how people really use dicts.
+    Handle the TypedDict product type. This allows you to construct a dict with specific
+    (string) keys, which is often how people really use dicts.
 
-    Both the class form and the functional form, ``TypedDict('Name', {'field': type, 'field': type})`` are
-    supported.
+    Both the class form and the functional form,
+    ``TypedDict('Name', {'field': type, 'field': type})`` are supported.
     """
     if verb not in _SUPPORTED_VERBS:
         return

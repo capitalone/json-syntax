@@ -129,7 +129,7 @@ def test_floats_disregard():
 
 
 def test_floats():
-    "Test the floats rule will generate encoders and decoders for floats that are tolerant of integers."
+    "Test the floats rule generates encoders and decoders that are tolerant of integers."
 
     decoder = std.floats(verb=JSON2PY, typ=float, ctx=Rules())
     assert decoder(77.7) == 77.7
@@ -157,7 +157,7 @@ def test_floats():
 
 
 def test_floats_nan_str():
-    "Test the floats rule will generate encoders and decoders for floats that are tolerant of integers."
+    "Test floats_nan_str rule generates encoders and decoders that stringify 'nan'."
 
     decoder = std.floats_nan_str(verb=JSON2PY, typ=float, ctx=Rules())
     assert decoder(77.7) == 77.7
@@ -276,7 +276,7 @@ def test_iso_dates_disregard():
 
 
 def test_iso_dates():
-    "Test the iso_dates rule handles dates using ISO8601, rejecting datetimes as input to dates."
+    "Test the iso_dates rule handles dates using ISO8601 and rejects datetimes."
 
     decoder = std.iso_dates(verb=JSON2PY, typ=date, ctx=Rules())
     assert decoder("1776-07-04") == date(1776, 7, 4)
@@ -302,7 +302,7 @@ def test_iso_dates():
 
 
 def test_iso_datetimes():
-    "Test the iso_dates rule will generate encoders and decoders for datetimes using ISO8601."
+    "Test the iso_dates rule generates encoders and decoders for datetimes using ISO8601."
 
     decoder = std.iso_dates(verb=JSON2PY, typ=datetime, ctx=Rules())
     assert decoder("6666-06-06T12:12:12.987654") == datetime(
@@ -385,7 +385,8 @@ def test_enums():
 
 
 def test_enums_int():
-    "Test the enums rule will generate encoders and decoders for enumerated type subclasses."
+    "Test the enums rule generates encoders and decoders for enumerated type subclasses."
+
     decoder = std.enums(verb=JSON2PY, typ=Enum2, ctx=Rules())
     assert decoder("ALPHA") == Enum2.ALPHA
     assert decoder("GAMMA") == Enum2.GAMMA
@@ -695,7 +696,7 @@ def test_dicts_string_key():
 
 
 def test_dicts_date_key():
-    "Test that dicts will generate encoders and decoders for dicts with simple dates as keys."
+    "Test that dicts will generate encoders and decoders for dicts keyed by simple dates."
 
     ctx = Rules(std.atoms, std.iso_dates, stringify_keys)
 

@@ -31,7 +31,8 @@ def has_origin(typ, origin, num_args=None):
 
 def get_origin(typ):
     """
-    Get the constructor origin of a generic type. For example, List is constructed with list.
+    Get the constructor origin of a generic type. For example, List is constructed with
+    list.
     """
     try:
         t_origin = typ.__origin__
@@ -165,8 +166,8 @@ if python_minor < (3, 7):
 
     def _origin_pts(typ, _pts=dict(_make_map())):
         """
-        Convert the __origin__ of a generic type returned by the provisional typing API (python3.4+) to the stable
-        version.
+        Convert the __origin__ of a generic type returned by the provisional typing API
+        (python3.4+) to the stable version.
 
         Don't use this, just use get_origin.
         """
@@ -182,21 +183,24 @@ if python_minor < (3, 7):
 
     def is_parametrized(typ):
         """
-        Determine if the type is both generic and fully realized; no free parameters. Parameters *may* be specified by type vars.
+        Determine if the type is both generic and fully realized; no free parameters.
+        Parameters *may* be specified by type vars.
 
-        This function works around weirdness in pre-3.7 where parameters will be set if TypeVars are specified.
+        This function works around weirdness in pre-3.7 where parameters will be set if
+        TypeVars are specified.
         """
         if not is_generic(typ):
             return False
         args = typ.__args__ or ()
         return all(param in args for param in typ.__parameters__)
 
+
 else:
 
     def _origin_pts(origin):
         """
-        Convert the __origin__ of a generic type returned by the provisional typing API (python3.4+) to the stable
-        version.
+        Convert the __origin__ of a generic type returned by the provisional typing API
+        (python3.4+) to the stable version.
 
         Don't use this, just use get_origin.
         """
@@ -212,9 +216,11 @@ else:
 
     def is_parametrized(typ):
         """
-        Determine if the type is both generic and fully realized; no free parameters. Parameters *may* be specified by type vars.
+        Determine if the type is both generic and fully realized; no free parameters.
+        Parameters *may* be specified by type vars.
         """
         return is_generic(typ) and not typ.__parameters__
+
 
 def issub_safe(sub, sup):
     """

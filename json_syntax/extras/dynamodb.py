@@ -1,19 +1,22 @@
 """
-While the main suite is fairly complex, it's really not hard to construct a small, useful translation.
+While the main suite is fairly complex, it's really not hard to construct a small, useful
+translation.
 
-AWS's DynamoDB decorates values to represent them in JSON. The rules for the decorations are fairly simple, and we'd
-like to translate to and from Python objects.
+AWS's DynamoDB decorates values to represent them in JSON. The rules for the decorations are
+fairly simple, and we'd like to translate to and from Python objects.
 
 The a Dynamo values look like this:
 
     {"BOOL": true}
     {"L": [{"N": "1.5"}, {"S": "apple"}]}
 
-We will generate rules to convert Python primitive types, lists and attrs classes into Dynamo types.
+We will generate rules to convert Python primitive types, lists and attrs classes into
+Dynamo types.
 
-This will special case the kinds of sets Dynamo handles. In keeping with the principle of least astonishment,
-it won't convert, e.g. ``Set[MyType]`` into a Dynamo list. This will just fail because Dynamo doesn't actually
-support that. You could add a rule if that's the correct semantics.
+This will special case the kinds of sets Dynamo handles. In keeping with the principle of
+least astonishment, it won't convert, e.g. ``Set[MyType]`` into a Dynamo list. This will
+just fail because Dynamo doesn't actually support that. You could add a rule if that's the
+correct semantics.
 
 For boto3 users: you must use the **client**, not the resource.
 
@@ -22,7 +25,7 @@ For boto3 users: you must use the **client**, not the resource.
 
 The ``boto3.resource('dynamodb').Table`` is already doing a conversion step we don't want.
 
-Ref: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_AttributeValue.html#DDB-Type-AttributeValue-NS
+Ref: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_AttributeValue.html#DDB-Type-AttributeValue-NS  # noqa
 """
 
 from json_syntax.helpers import (
@@ -64,8 +67,9 @@ def booleans(verb, typ, ctx):
 
 def numbers(verb, typ, ctx):
     """
-    A rule to represent numeric values as Dynamo numbers. Any number type should work, however both Decimal and float
-    support NaN and infinity and I haven't tested these in Dynamo.
+    A rule to represent numeric values as Dynamo numbers. Any number type should work,
+    however both Decimal and float support NaN and infinity and I haven't tested these in
+    Dynamo.
     """
     if typ == bool or not issub_safe(typ, (Decimal, Real)):
         return
@@ -146,10 +150,12 @@ def dicts(verb, typ, ctx):
 
 def sets(verb, typ, ctx):
     """
-    A rule to represent sets. Will only use specialized Dynamo sets, to abide by principle of least astonishment.
+    A rule to represent sets. Will only use specialized Dynamo sets, to abide by principle
+    of least astonishment.
 
-    Valid python types include Set[Decimal], Set[str], Set[bytes], or FrozenSet for any of these. Also, any number that
-    converts from Decimal and converts to a decimal if str is called should work.
+    Valid python types include Set[Decimal], Set[str], Set[bytes], or FrozenSet for any of
+    these. Also, any number that converts from Decimal and converts to a decimal if str is
+    called should work.
     """
     if not has_origin(typ, (set, frozenset), num_args=1):
         return
@@ -248,7 +254,8 @@ class DynamodbRuleSet(SimpleRuleSet):
         Usage:
 
             rs = dynamodb_ruleset()
-            response = client.get_item(TableName='my_table', Key=rs.ad_hoc(my_key='some_string'))
+            response = client.get_item(TableName='my_table',
+                                       Key=rs.ad_hoc(my_key='some_string'))
             decoder = rs.ddb_item_to_python(MyAttrsType)
             result = decoder(response['Item'])
         """
@@ -272,7 +279,8 @@ class DynamodbRuleSet(SimpleRuleSet):
 
     def ad_hoc(self, _key_prefix="", **kw):
         """
-        Convenience method to encode an ad hoc set of arguments used in various DynamoDB APIs.
+        Convenience method to encode an ad hoc set of arguments used in various DynamoDB
+        APIs.
 
         If an argument is a tuple, it must be a two-item tuple of ``(value, type)``.
         If you want to use container types, you'll have to specify them fully. For empty
@@ -431,7 +439,8 @@ def _encode_number(value):
     if isinstance(value, (int, float, Decimal)):
         return str(value)
     else:
-        # This is all the Real interface guarantees us. It's a stretch using Fraction in Dynamo.
+        # This is all the Real interface guarantees us. It's a stretch using Fraction in
+        # Dynamo.
         return str(float(value))
 
 

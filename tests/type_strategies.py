@@ -7,7 +7,8 @@ from enum import Enum
 from . import _strategies as _st
 
 
-# Tests often want to compare for equality, and there's no good way to do this with NaNs breaking it. :-(
+# Tests often want to compare for equality, and there's no good way to do this with NaNs
+# breaking it. :-(
 st.register_type_strategy(Decimal, st.decimals(allow_nan=False))
 st.register_type_strategy(float, st.floats(allow_nan=False))
 
