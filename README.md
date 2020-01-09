@@ -168,8 +168,8 @@ Thus we have:
  * `dict` and `Dict[K, V]`
 
 Tuple is a special case. In Python, they're often used to mean "frozenlist", so
-`Tuple[E, ...]` (the `...` is [the Ellipsis object][ellipsis]) indicates all elements have the type
-`E`.
+`Tuple[E, ...]` (the `...` is [the Ellipsis object][ellipsis]) indicates all elements have
+the type `E`.
 
 They're also used to represent an unnamed record. In this case, you can use
 `Tuple[A, B, C, D]` or however many types. It's generally better to use a `dataclass`.
@@ -183,9 +183,9 @@ The standard rules don't support:
 #### Support for deriving from Generic
 
 There is experimental support for deriving from `typing.Generic`. An `attrs` or `dataclass`
-may declare itself a generic class. If another class invokes it as `YourGeneric[Param, Param]`,
-those `Param` types will be substituted into the fields during encoded. This is useful to construct
-parameterized container types. Example:
+may declare itself a generic class. If another class invokes it as `YourGeneric[Param,
+Param]`, those `Param` types will be substituted into the fields during encoding. This is
+useful to construct parameterized container types. Example:
 
     @attr.s(auto_attribs=True)
     class Wrapper(Generic[T, M]):

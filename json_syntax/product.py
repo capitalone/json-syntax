@@ -80,7 +80,6 @@ def is_attrs_field_required(field):
 def attr_map(verb, outer, ctx, gen, typ_args=None):
     result = []
     failed = []
-    typ_args = typ_args
     for att in gen:
         if att.typ is not None:
             try:
