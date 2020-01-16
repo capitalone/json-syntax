@@ -22,13 +22,14 @@ class SimpleRuleSet:
     """
     This is the base of RuleSet and doesn't know anything about the standard verbs.
 
-    A ruleset contains a series of rules that will be evaluated, in order, against types to attempt to construct
-    encoders and decoders.
+    A ruleset contains a series of rules that will be evaluated, in order, against types to
+    attempt to construct encoders and decoders.
 
     It takes a list of rules; functions that accept a verb and type and return actions.
 
-    The keyword argument `cache` can specify a custom rule cache. `json_syntax.cache.ThreadLocalCache` may be helpful
-    if you are loading rules in a multi-threaded environment.
+    The keyword argument `cache` can specify a custom rule cache.
+    `json_syntax.cache.ThreadLocalCache` may be helpful if you are loading rules in a
+    multi-threaded environment.
     """
 
     def __init__(self, *rules, cache=None):
@@ -78,16 +79,17 @@ class SimpleRuleSet:
 
 class RuleSet(SimpleRuleSet):
     """
-    A ruleset contains a series of rules that will be evaluated, in order, against types to attempt
-    to construct encoders and decoders.
+    A ruleset contains a series of rules that will be evaluated, in order, against types to
+    attempt to construct encoders and decoders.
 
     It takes a list of rules; functions that accept a verb and type and return actions.
 
-    The keyword argument `cache` can specify a custom rule cache. `json_syntax.cache.ThreadLocalCache`
-    may be helpful if you are loading rules in a multi-threaded environment.
+    The keyword argument `cache` can specify a custom rule cache.
+    `json_syntax.cache.ThreadLocalCache` may be helpful if you are loading rules in a
+    multi-threaded environment.
 
-    The most important methods are generally `json_to_python` and `python_to_json`; these take a
-    fully specified type and produce an encoder and decoder respectively.
+    The most important methods are generally `json_to_python` and `python_to_json`; these
+    take a fully specified type and produce an encoder and decoder respectively.
     """
 
     def json_to_python(self, typ):

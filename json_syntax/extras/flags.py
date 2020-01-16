@@ -12,15 +12,18 @@ class Flag(type):
     """
     An example of a custom type that lets you quickly create string-only flags.
 
-    This also demonstrates a technique that makes it possible to create a fake type that can be
-    used within ``typing.Union``.
+    This also demonstrates a technique that makes it possible to create a fake type that can
+    be used within ``typing.Union``.
 
     Thanks to __class_getitem__, you can invoke this as ``Flag['foo', 'bar', 'etc']``
     but this requires Python 3.7!
     """
 
     def __new__(cls, *args, **kwds):
-        """This is necessary to be a subclass of `type`, which is necessary to be used in a Union."""
+        """
+        This is necessary to be a subclass of `type`, which is necessary to be used in a
+        Union.
+        """
         return super().__new__(cls, cls.__name__, (), {})
 
     def __init__(self, *elems):
@@ -46,10 +49,11 @@ def _check_flag(elems, value):
     """
     Checks that a value is a member of a set of flags.
 
-    Note that we use a top-level function and `partial`. The trouble with lambdas or local defs is that they
-    can't be pickled because they're inaccessible to the unpickler.
+    Note that we use a top-level function and `partial`. The trouble with lambdas or local
+    defs is that they can't be pickled because they're inaccessible to the unpickler.
 
-    If you don't intend to pickle your encoders, though, they're completely fine to use in rules.
+    If you don't intend to pickle your encoders, though, they're completely fine to use in
+    rules.
     """
     return isinstance(value, str) and value in elems
 
@@ -68,7 +72,8 @@ def _convert_flag(elems, value):
 
 def flags(*, verb, typ, ctx):
     """
-    A simple rule to allow certain strings as flag values, but without converting them to an actual Enum.
+    A simple rule to allow certain strings as flag values, but without converting them to an
+    actual Enum.
 
     This rule is triggered with a fake type ``Flag['string', 'string', 'string']``.
     """

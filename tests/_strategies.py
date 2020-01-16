@@ -73,7 +73,7 @@ def attrs(types, frozen):
             "attrs_" + name,
             {field: _attrib(typ) for field, typ in fields},
             frozen=frozen,
-            **kw,
+            **kw
         )
 
     return st.builds(_make, idents, fields_idents(types), slots=st.booleans())
