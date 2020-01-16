@@ -186,7 +186,7 @@ def convert_dict_to_attrs(value, pre_hook, inner_map, con):
                 if attr.is_required:
                     raise KeyError("Missing key") from None
             else:
-                args[attr.name] = attr.inner(arg)
+                args[attr.init_name] = attr.inner(arg)
     return con(**args)
 
 

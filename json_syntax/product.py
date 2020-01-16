@@ -40,6 +40,7 @@ class Attribute:
 
     Fields:
       name: the attribute name
+      init_name: the constructor name
       inner: the action to take given the verb and the attribute's type
       default: a static default Python value
       is_required: a boolean indicating if the attribute is required
@@ -54,10 +55,20 @@ class Attribute:
         self.default = default
         self.is_required = is_required
 
+    @property
+    def init_name(self):
+        return self.name
+
     def __repr__(self):
         return "<Attribute {!r}; {}>".format(
             self.name, "required" if self.is_required else "optional"
         )
+
+
+class AttrsAttribute(Attribute):
+    @property
+    def init_name(self):
+        return self.name.lstrip('_')
 
 
 def is_attrs_field_required(field):
@@ -108,10 +119,10 @@ def build_attribute_map(verb, typ, ctx):
     Returns a list of Attribute instances, or None if the type is not an attrs or dataclass type.
     """
     try:
-        fields = typ.__attrs_attrs__
+        fields, con = typ.__attrs_attrs__, AttrsAttribute
     except AttributeError:
         try:
-            fields = typ.__dataclass_fields__
+            fields, con = typ.__dataclass_fields__, Attribute
         except AttributeError:
             return
         else:
@@ -121,12 +132,12 @@ def build_attribute_map(verb, typ, ctx):
         verb,
         typ,
         ctx,
-        (
-            Attribute(
+        gen=(
+            con(
                 name=field.name,
                 typ=field.type,
                 is_required=is_attrs_field_required(field),
-                default=field.default,
+                default=field.default
             )
             for field in fields
             if field.init
