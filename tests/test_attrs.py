@@ -27,6 +27,12 @@ class GenFlat(Generic[T]):
 
 
 @attr.s
+class PrivateFields:
+    pub = attr.ib(type=str)
+    _priv = attr.ib(type=int)
+
+
+@attr.s
 class Hook1(Hooks):
     a = attr.ib(type=int)
     b = attr.ib("default", type=str)
@@ -112,6 +118,26 @@ def test_attrs_encoding(con, FlatCls):
     assert inspect({"a": 33})
     assert inspect({"a": 33, "b": "foo"})
     assert not inspect({"b": "foo"})
+
+
+@pytest.mark.parametrize("PrivateCls", [PrivateFields, ann.PrivateFieldsDc,])
+def test_attrs_private(PrivateCls):
+    "Test that attrs_classes encode and decode classes with private fields correctly."
+    if PrivateCls is None:
+        pytest.skip("Annotations unavailable")
+
+    original = PrivateCls("value", 77)
+
+    encoder = at.attrs_classes(verb=PY2JSON, typ=PrivateCls, ctx=Ctx())
+    encoded = encoder(original)
+
+    assert encoded["pub"] == "value"
+    assert encoded["_priv"] == 77
+
+    decoder = at.attrs_classes(verb=JSON2PY, typ=PrivateCls, ctx=Ctx())
+    decoded = decoder(encoded)
+
+    assert decoded == original
 
 
 @pytest.mark.parametrize("HookCls", [Hook1, ann.Hook])

@@ -25,7 +25,7 @@ structure using libraries like [attrs][].
  * It makes it trivial to extend the library with your own rules
     * Actions and Rules are simply functions
     * Encoders and decoders can be pickled
- * The library has no dependencies of its own
+ * The library has no dependencies of its own on python 3.7+
     * It does not actually read or write JSON
 
 ### Supported types
