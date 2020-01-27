@@ -76,6 +76,11 @@ if dc.dataclass:
         count: int
         messages: t.List[U]
 
+    @dc.dataclass
+    class PrivateFieldsDc:
+        pub: str
+        _priv: int
+
 
 else:
-    FlatDc = GenFlatDc = HookDc = GenericExampleDc = None
+    FlatDc = GenFlatDc = HookDc = GenericExampleDc = PrivateFieldsDc = None

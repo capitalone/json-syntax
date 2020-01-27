@@ -71,7 +71,7 @@ class Attribute:
 class AttrsAttribute(Attribute):
     @property
     def init_name(self):
-        return self.name.lstrip('_')
+        return self.name.lstrip("_")
 
 
 def is_attrs_field_required(field):
@@ -143,7 +143,7 @@ def build_attribute_map(verb, typ, ctx, typ_args=None):
                 name=field.name,
                 typ=field.type,
                 is_required=is_attrs_field_required(field),
-                default=field.default
+                default=field.default,
             )
             for field in fields
             if field.init
