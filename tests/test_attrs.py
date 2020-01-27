@@ -123,6 +123,8 @@ def test_attrs_encoding(con, FlatCls):
 @pytest.mark.parametrize("PrivateCls", [PrivateFields, ann.PrivateFieldsDc,])
 def test_attrs_private(PrivateCls):
     "Test that attrs_classes encode and decode classes with private fields correctly."
+    if PrivateCls is None:
+        pytest.skip("Annotations unavailable")
 
     original = PrivateCls("value", 77)
 
