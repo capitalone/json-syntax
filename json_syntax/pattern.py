@@ -24,7 +24,8 @@ dumps = partial(json.dumps, **_args)
 
 class Matches(IntEnum):
     """
-    This determines the degree to which one pattern can shadow another causing potential ambiguity.
+    This determines the degree to which one pattern can shadow another causing potential
+    ambiguity.
 
     Meaning:
 
@@ -33,11 +34,12 @@ class Matches(IntEnum):
       * potential: It's not possible to prove the pattern won't shadow the other pattern.
       * never: The pattern will never shadow the other pattern.
 
-    In determining ambiguity, a `sometimes` threshold is often permissible. For example, if you have
-    `Union[date, str]` then properly formatted dates will sometimes shadow strings. That's probably okay
-    if you want special handling for dates.
+    In determining ambiguity, a `sometimes` threshold is often permissible. For example, if
+    you have `Union[date, str]` then properly formatted dates will sometimes shadow strings.
+    That's probably okay if you want special handling for dates.
 
-    But in `Union[str, date]`, the `str` will always match and thus no dates will ever be recognized.
+    But in `Union[str, date]`, the `str` will always match and thus no dates will ever be
+    recognized.
     """
 
     always = 0

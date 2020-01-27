@@ -25,7 +25,7 @@ structure using libraries like [attrs][].
  * It makes it trivial to extend the library with your own rules
     * Actions and Rules are simply functions
     * Encoders and decoders can be pickled
- * The library has no dependencies of its own
+ * The library has no dependencies of its own on python 3.7+
     * It does not actually read or write JSON
 
 ### Supported types
@@ -168,8 +168,8 @@ Thus we have:
  * `dict` and `Dict[K, V]`
 
 Tuple is a special case. In Python, they're often used to mean "frozenlist", so
-`Tuple[E, ...]` (the `...` is [the Ellipsis object][ellipsis]) indicates all elements have the type
-`E`.
+`Tuple[E, ...]` (the `...` is [the Ellipsis object][ellipsis]) indicates all elements have
+the type `E`.
 
 They're also used to represent an unnamed record. In this case, you can use
 `Tuple[A, B, C, D]` or however many types. It's generally better to use a `dataclass`.
@@ -179,6 +179,24 @@ The standard rules don't support:
  1. Using abstract types like `Iterable` or `Mapping`.
  2. Using type variables.
  3. Any kind of callable, coroutine, file handle, etc.
+
+#### Support for deriving from Generic
+
+There is experimental support for deriving from `typing.Generic`. An `attrs` or `dataclass`
+may declare itself a generic class. If another class invokes it as `YourGeneric[Param,
+Param]`, those `Param` types will be substituted into the fields during encoding. This is
+useful to construct parameterized container types. Example:
+
+    @attr.s(auto_attribs=True)
+    class Wrapper(Generic[T, M]):
+        body: T
+        count: int
+        messages: List[M]
+
+    @attr.s(auto_attribs=True)
+    class Message:
+        first: Wrapper[str, str]
+        second: Wrapper[Dict[str, str], int]
 
 #### Unions
 
@@ -347,28 +365,19 @@ This package is maintained via the [poetry][] tool. Some useful commands:
 
  1. Setup: `poetry install`
  2. Run tests: `poetry run pytest tests/`
- 3. Reformat: `poetry run black json_syntax/ tests/`
+ 3. Reformat: `black json_syntax/ tests/`
+ 4. Generate setup.py: `dephell deps convert -e setup`
+ 5. Generate requirements.txt: `dephell deps convert -e req`
 
-### Setting up tox
+### Running tests via docker
 
-You'll want pyenv, then install the pythons:
+The environments for 3.4 through 3.9 are in `pyproject.toml`, so just run:
 
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-    pyenv install --list | egrep '^ *3\.[4567]|^ *pypy3.5'
-    # figure out what versions you want
-    for v in 3.4.9 3.5.10 ...; do
-       pyenv install $v
-       PYENV_VERSION=$v python get-pip.py
-    done
-
-Once you install `tox` in your preferred python, running it is just `tox`. (Note: this is
-largely redundant as the build is configured to all the different pythons on Circle.)
-
-### Contributor roll call
-
-* @bsamuel-ui -- Ben Samuel
-* @dschep
-* @rugheid
+    dephell deps convert -e req  # Create requirements.txt
+    dephell docker run -e test34 pip install -r requirements.txt
+    dephell docker run -e test34 pytest tests/
+    dephell docker shell -e test34 pytest tests/
+    dephell docker destroy -e test34
 
 ### Notes
 

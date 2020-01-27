@@ -1,34 +1,55 @@
 import pytest
 
+from .common import SoftMod, typing as t, Rules
+from .types_attrs_common import Hooks, T, U
+
 from json_syntax import attrs as at
+from json_syntax import std
 from json_syntax.helpers import JSON2PY, PY2JSON, INSP_PY, INSP_JSON
 
-try:
-    from dataclasses import dataclass
-except ImportError:
-    dataclass = lambda cls: None  # noqa
-from typing import Tuple
+import attr
+from collections import namedtuple
+from typing import Tuple, Generic, List
+
+ann = SoftMod("tests.types_attrs_ann", allow_SyntaxError=True)
+
+
+@attr.s
+class Flat:
+    a = attr.ib(type=int)
+    b = attr.ib("default", type=str)
+
+
+@attr.s
+class GenFlat(Generic[T]):
+    a = attr.ib(type=T)
+    b = attr.ib("default", type=str)
+
+
+@attr.s
+class Hook1(Hooks):
+    a = attr.ib(type=int)
+    b = attr.ib("default", type=str)
+
+
+@attr.s
+class GenExample(Generic[T, U]):
+    body = attr.ib(type=T)
+    count = attr.ib(type=int)
+    messages = attr.ib(type=t.List[U])
+
 
 try:
-    from tests.types_attrs_ann import (
-        flat_types,
-        hook_types,
-        Named1,
-        Named2,
-        Named3,
-        Dict1,
-        Dict2,
-    )
-except SyntaxError:
-    from tests.types_attrs_noann import (
-        flat_types,
-        hook_types,
-        Named1,
-        Named2,
-        Named3,
-        Dict1,
-        Dict2,
-    )
+
+    @attr.s(slots=True)
+    class GenExampleSlots(Generic[T, U]):
+        body = attr.ib(type=T)
+        count = attr.ib(type=int)
+        messages = attr.ib(type=t.List[U])
+
+
+except TypeError:
+    GenExampleSlots = None
 
 
 class Fail:
@@ -53,37 +74,51 @@ def test_attrs_classes_disregards():
     assert at.attrs_classes(verb=PY2JSON, typ=int, ctx=Fail()) is None
     assert at.attrs_classes(verb=INSP_PY, typ=int, ctx=Fail()) is None
     assert at.attrs_classes(verb=JSON2PY, typ=object, ctx=Fail()) is None
-    assert at.attrs_classes(verb="dummy", typ=flat_types[0], ctx=Fail()) is None
+    assert at.attrs_classes(verb="dummy", typ=Flat, ctx=Fail()) is None
 
 
-@pytest.mark.parametrize("FlatCls", flat_types)
-def test_attrs_encoding(FlatCls):
+@pytest.mark.parametrize(
+    "con, FlatCls",
+    [
+        (Flat, Flat),
+        (ann.Flat, ann.Flat),
+        (GenFlat, GenFlat[int]),
+        (ann.GenFlat, ann.GenFlat[int]) if ann.GenFlat else (None, None),
+        (ann.FlatDc, ann.FlatDc),
+        (ann.GenFlatDc, ann.GenFlatDc[int]) if ann.GenFlatDc else (None, None),
+    ],
+)
+def test_attrs_encoding(con, FlatCls):
     "Test that attrs_classes encodes and decodes a flat class."
+    if FlatCls is None:
+        pytest.skip("Annotations unavailable")
 
     encoder = at.attrs_classes(verb=PY2JSON, typ=FlatCls, ctx=Ctx())
-    assert encoder(FlatCls(33, "foo")) == {"a": 33, "b": "foo"}
-    assert encoder(FlatCls(33, "default")) == {"a": 33}
+    assert encoder(con(33, "foo")) == {"a": 33, "b": "foo"}
+    assert encoder(con(33, "default")) == {"a": 33}
 
     decoder = at.attrs_classes(verb=JSON2PY, typ=FlatCls, ctx=Ctx())
     assert decoder({"a": 33, "b": "foo"}) == FlatCls(33, "foo")
     assert decoder({"a": 33}) == FlatCls(33)
 
     inspect = at.attrs_classes(verb=INSP_PY, typ=FlatCls, ctx=Ctx())
-    assert inspect(FlatCls(33, "foo"))
-    assert inspect(FlatCls("str", "foo"))
+    assert inspect(con(33, "foo"))
+    assert inspect(con("str", "foo"))
     assert not inspect({"a": 33, "b": "foo"})
 
     inspect = at.attrs_classes(verb=INSP_JSON, typ=FlatCls, ctx=Ctx())
-    assert not inspect(FlatCls(33, "foo"))
+    assert not inspect(con(33, "foo"))
     assert not inspect({"a": "str", "b": "foo"})
     assert inspect({"a": 33})
     assert inspect({"a": 33, "b": "foo"})
     assert not inspect({"b": "foo"})
 
 
-@pytest.mark.parametrize("HookCls", hook_types)
+@pytest.mark.parametrize("HookCls", [Hook1, ann.Hook])
 def test_attrs_hooks(HookCls):
     "Test that attrs_classes enables hooks."
+    if HookCls is None:
+        pytest.skip("Annotations unavailable")
 
     encoder = at.attrs_classes(verb=PY2JSON, typ=HookCls, ctx=Ctx())
     assert encoder(HookCls(33, "foo")) == {"_type_": "Hook", "a": 33, "b": "foo"}
@@ -104,6 +139,60 @@ def test_attrs_hooks(HookCls):
     assert not inspect({"a": 33, "b": "foo"})
     assert inspect({"_type_": "Hook", "a": 33, "b": "foo"})
     assert inspect({"_type_": "Hook"})
+
+
+@pytest.mark.parametrize(
+    "GenClass",
+    [
+        GenExample,
+        GenExampleSlots,
+        ann.GenExample,
+        ann.GenExampleSlots,
+        ann.GenExampleDc,
+    ],
+)
+def test_attrs_generic(GenClass):
+    if GenClass is None:
+        pytest.skip()
+
+    @attr.s
+    class Top:
+        nested = attr.ib(type=GenClass[GenClass[str, str], str])
+        list_of = attr.ib(type=List[GenClass[Tuple[Flat, ...], int]])
+
+    rules = Rules(at.attrs_classes, std.atoms, std.lists)
+    py_val = Top(
+        nested=GenClass(
+            body=GenClass(body="body", count=5, messages=["msg1", "msg2"]),
+            count=3,
+            messages=["msg3", "msg4"],
+        ),
+        list_of=[
+            GenClass(body=(Flat(a=1), Flat(a=2, b="three")), count=4, messages=[6, 7])
+        ],
+    )
+    j_val = {
+        "list_of": [
+            {"body": [{"a": 1}, {"a": 2, "b": "three"}], "count": 4, "messages": [6, 7]}
+        ],
+        "nested": {
+            "body": {"body": "body", "count": 5, "messages": ["msg1", "msg2"]},
+            "count": 3,
+            "messages": ["msg3", "msg4"],
+        },
+    }
+
+    encoder = at.attrs_classes(verb=PY2JSON, typ=Top, ctx=rules)
+    assert encoder(py_val) == j_val
+
+    decoder = at.attrs_classes(verb=JSON2PY, typ=Top, ctx=rules)
+    assert decoder(j_val) == py_val
+
+    inspect = at.attrs_classes(verb=INSP_PY, typ=Top, ctx=rules)
+    assert inspect(py_val)
+
+    inspect = at.attrs_classes(verb=INSP_JSON, typ=Top, ctx=rules)
+    assert inspect(j_val)
 
 
 class Ctx2:
@@ -128,6 +217,14 @@ def test_named_tuples_disregards():
     assert at.named_tuples(verb=INSP_PY, typ=int, ctx=Fail()) is None
     assert at.named_tuples(verb=JSON2PY, typ=tuple, ctx=Fail()) is None
     assert at.named_tuples(verb="dummy", typ=Named1, ctx=Fail()) is None
+
+
+Named1 = namedtuple("Named1", ["a", "b"])
+try:
+    Named2 = namedtuple("Named2", ["a", "b"], defaults=["default"])
+except TypeError:
+    Named2 = None
+Named3 = ann.Named
 
 
 def test_named_tuples_encoding1():
@@ -243,13 +340,12 @@ def test_tuples_encoding():
 
 
 @pytest.mark.parametrize(
-    "dict_type,reason",
-    [(Dict1, "TypedDict unavailable"), (Dict2, "TypedDict or annotations unavailable")],
+    "dict_type", [t.TypedDict("Dict1", a=int, b=str) if t.TypedDict else None, ann.Dict]
 )
-def test_typed_dict_encoding(dict_type, reason):
+def test_typed_dict_encoding(dict_type):
     "Test that typed_dicts encodes and decodes a typed dict."
     if dict_type is None:
-        pytest.skip(reason)
+        pytest.skip("TypedDict or annotations unavailable")
 
     encoder = at.typed_dicts(verb=PY2JSON, typ=dict_type, ctx=Ctx())
     assert encoder({"a": 3, "b": "foo"}) == {"a": 3, "b": "foo"}

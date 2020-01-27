@@ -2,14 +2,15 @@
 A module to help with product types in Python.
 """
 
-from .helpers import issub_safe, resolve_fwd_ref, SENTINEL
+from .helpers import SENTINEL
+from .types import issub_safe, resolve_fwd_ref, rewrite_typevars
 
 _TypedDictMeta = None
 try:
     from typing import _TypedDictMeta
 except ImportError:
     try:
-        from typing_extensions import _TypeDictMeta  # noqa
+        from typing_extensions import _TypedDictMeta  # noqa
     except ImportError:
         pass
 
@@ -31,12 +32,14 @@ except ImportError:
 
 class Attribute:
     """
-    Generic class to describe an attribute for a product type that can be represented as, e.g., a JSON map.
+    Generic class to describe an attribute for a product type that can be represented as,
+    e.g., a JSON map.
 
-    An Attribute is associated with an action, specifically, its "inner" field directs how to process the inside type,
-    not necessarily what the inside type is.
+    An Attribute is associated with an action, specifically, its "inner" field directs how
+    to process the inside type, not necessarily what the inside type is.
 
-    See the various build_* commands to generate attribute maps. (These are really just lists of Attribute instances.)
+    See the various build_* commands to generate attribute maps. (These are really just
+    lists of Attribute instances.)
 
     Fields:
       name: the attribute name
@@ -85,7 +88,7 @@ def is_attrs_field_required(field):
         return factory in _attrs_missing_values
 
 
-def attr_map(verb, outer, ctx, gen):
+def attr_map(verb, outer, ctx, gen, typ_args=None):
     result = []
     failed = []
     for att in gen:
@@ -94,6 +97,8 @@ def attr_map(verb, outer, ctx, gen):
                 att.typ = resolve_fwd_ref(att.typ, outer)
             except TypeError:
                 failed.append("resolve fwd ref {} for {}".format(att.typ, att.name))
+            else:
+                att.typ = rewrite_typevars(att.typ, typ_args)
         if att.inner is None:
             att.inner = ctx.lookup(
                 verb=verb, typ=resolve_fwd_ref(att.typ, outer), accept_missing=True
@@ -112,11 +117,12 @@ def attr_map(verb, outer, ctx, gen):
     return tuple(result)
 
 
-def build_attribute_map(verb, typ, ctx):
+def build_attribute_map(verb, typ, ctx, typ_args=None):
     """
     Examine an attrs or dataclass type and construct a list of attributes.
 
-    Returns a list of Attribute instances, or None if the type is not an attrs or dataclass type.
+    Returns a list of Attribute instances, or None if the type is not an attrs or dataclass
+    type.
     """
     try:
         fields, con = typ.__attrs_attrs__, AttrsAttribute
@@ -142,6 +148,7 @@ def build_attribute_map(verb, typ, ctx):
             for field in fields
             if field.init
         ),
+        typ_args=typ_args,
     )
 
 
@@ -178,7 +185,7 @@ def build_named_tuple_map(verb, typ, ctx):
         verb,
         typ,
         ctx,
-        (
+        gen=(
             Attribute(
                 name=name,
                 typ=inner,
@@ -187,6 +194,7 @@ def build_named_tuple_map(verb, typ, ctx):
             )
             for name, inner in fields
         ),
+        typ_args=None,  # A named tuple type can't accept generic arguments.
     )
 
 
@@ -207,8 +215,9 @@ def build_typed_dict_map(verb, typ, ctx):
         verb,
         typ,
         ctx,
-        (
+        gen=(
             Attribute(name=name, typ=inner, is_required=True, default=SENTINEL)
             for name, inner in typ.__annotations__.items()
         ),
+        typ_args=None,  # A typed dict can't accept generic arguments.
     )

@@ -13,14 +13,15 @@ from functools import partial
 
 
 """
-As JSON requires string keys, unless dicts are only allowed to be Dict[str, T], we need to be able to encode
-values as strings.
+As JSON requires string keys, unless dicts are only allowed to be Dict[str, T], we need to
+be able to encode values as strings.
 
 Recommendations:
 
 * The string verbs are not intended for direct use.
 * Use these verbs for any type that must be represented as a key in a JSON object.
-* The standard rules will only handle types that are reliable keys and have obvious string encodings.
+* The standard rules will only handle types that are reliable keys and have obvious string
+  encodings.
 
 See std.dicts for an example.
 """
