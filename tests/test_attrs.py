@@ -396,3 +396,33 @@ def test_typed_dict_encoding(dict_type):
     assert not inspect("foo")
     assert not inspect({})
     assert inspect({"a": 3, "b": "foo", "c": True})
+
+
+@attr.s(eq=False)
+class Incomparable:
+    def __eq__(self, other):
+        raise RuntimeError("Can't compare this class")
+
+    def __ne__(self, other):
+        raise RuntimeError("Can't compare this class")
+
+
+@attr.s
+class IncomparableContainer:
+    field1 = attr.ib(type=Incomparable)
+    field2 = attr.ib(type=int, default=3)
+
+
+def test_encode_incomparable():
+    "Test that encoding doesn't fail if a field's __eq__ method throws."
+
+    rules = Rules(at.attrs_classes, std.atoms, std.lists)
+
+    encoder = at.attrs_classes(verb=PY2JSON, typ=IncomparableContainer, ctx=rules)
+    assert encoder(IncomparableContainer(Incomparable())) == {"field1": {}}
+    assert encoder(IncomparableContainer(Incomparable(), 4)) == {"field1": {}, "field2": 4}
+
+    decoder = at.attrs_classes(verb=JSON2PY, typ=IncomparableContainer, ctx=rules)
+    actual = decoder({"field1": {}})
+    assert isinstance(actual.field1, Incomparable)
+    assert actual.field2 == 3
