@@ -1,8 +1,4 @@
 from .helpers import (
-    has_origin,
-    get_origin,
-    issub_safe,
-    NoneType,
     JSON2PY,
     PY2JSON,
     INSP_JSON,
@@ -11,6 +7,12 @@ from .helpers import (
     STR2PY,
     PY2STR,
     INSP_STR,
+)
+from .types import (
+    has_origin,
+    get_origin,
+    issub_safe,
+    NoneType,
 )
 from .action_v1 import (
     check_collection,
@@ -54,7 +56,7 @@ returns a conversion function for that verb.
 
 
 def atoms(verb, typ, ctx):
-    "Rule to handle atoms on both sides."
+    "Rule to handle atoms that translate trivially."
     if issub_safe(typ, (str, int, NoneType)):
         if verb in (JSON2PY, PY2JSON):
             if typ is NoneType:

@@ -67,6 +67,11 @@ class Attribute:
             self.name, "required" if self.is_required else "optional"
         )
 
+    def long_repr(self):
+        return "<Attribute {!r} typ={!r} inner={!r} default={!r} is_required={!r}>".format(
+            self.name, self.typ, self.inner, self.default, self.is_required
+        )
+
 
 class AttrsAttribute(Attribute):
     @property

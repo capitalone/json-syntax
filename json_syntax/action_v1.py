@@ -1,4 +1,4 @@
-from .helpers import ErrorContext, err_ctx
+from .errors import ErrorContext, err_ctx
 
 from datetime import date, datetime, time, timedelta
 from decimal import InvalidOperation
@@ -184,7 +184,7 @@ def convert_dict_to_attrs(value, pre_hook, inner_map, con):
                 arg = value[attr.name]
             except KeyError:
                 if attr.is_required:
-                    raise KeyError("Missing key") from None
+                    raise KeyError("Missing key {!r}".format(attr.name)) from None
             else:
                 args[attr.init_name] = attr.inner(arg)
     return con(**args)
@@ -198,7 +198,7 @@ def convert_dict_to_dict(value, inner_map, con):
                 arg = value[attr.name]
             except KeyError:
                 if attr.is_required:
-                    raise KeyError("Missing key") from None
+                    raise KeyError("Missing key {!r}".format(attr.name)) from None
             else:
                 args[attr.name] = attr.inner(arg)
     return con(args)
@@ -226,7 +226,7 @@ def convert_attrs_to_dict(value, post_hook, inner_map):
     for attr in inner_map:
         with ErrorContext("." + attr.name):
             field = getattr(value, attr.name)
-            if field == attr.default:
+            if not attr.is_required and field == attr.default:
                 continue
             out[attr.name] = attr.inner(field)
     if post_hook is not None:
