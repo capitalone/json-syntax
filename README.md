@@ -7,7 +7,7 @@ classes using customizable rules.
 
 ## Use case
 
-If you're like the authors, you tried writing a encoding function that attempted to
+If you're like the authors, you tried writing an encoding function that attempted to
 encode and decode by interrogating the types at runtime, maybe calling some method like
 `asdict`. This works fine for generating JSON, but it gets sketchy<sup
 id="a1">[1](#f1)</sup> when trying to decode the same JSON.
@@ -26,7 +26,7 @@ structure using libraries like [attrs][].
     * Actions and Rules are simply functions
     * Encoders and decoders can be pickled
  * The library has no dependencies of its own on python 3.7+
-    * It does not actually read or write JSON
+    * It does not read or write JSON
 
 ### Supported types
 
@@ -64,7 +64,7 @@ useful in their own right.
  * [A ruleset][extras ddb] for use with AWS DynamoDB is included with basic facilities.
    * Restriction: No general support for `typing.Union`, only `Optional`.
    * Restriction: No general support for `Set`, only the special cases that are native to DynamoDB.
- * [A `Flag` psuedo-type][extras flag] allows you to use regular strings directly as flags.
+ * [A `Flag` pseudo-type][extras flag] allows you to use regular strings directly as flags.
  * [A rule][extras loose] that will accept a complete `datetime` and return a `date` by truncating the timestamp.
 
 ## Usage
@@ -154,8 +154,8 @@ with open('myfile.json', 'w') as fh:
 
 ### Using generic types
 
-Generally, the [typing][] module simple provides capital letter type names that obviously
-correspond to the internal types. [See TYPES for a more thorough introduction][types].
+Generally, the [typing][] module simply provides capital letter type names that explicitly
+corresponds to the internal types. [See TYPES for a more thorough introduction][types].
 
 And you specify the type of the contents as a parameter in square brackets.
 
@@ -219,7 +219,7 @@ See the section on [sharp edges][sharp] for more details.
 We'll first examine decode and encode hooks. These let us entirely rewrite the JSON
 representation before the normal logic is applied.
 
-Let's suppose our `Account` class used to named the `balance` field `bal` and we need to
+Let's suppose our `Account` class used to name the `balance` field `bal` and we need to
 support legacy users.
 
 ```python
@@ -299,7 +299,7 @@ If your rule needs an encoder or decoder for a standard type, it can call
 `ctx.lookup(verb=verb, typ=subtype)`. The helper functions defined in `json_syntax.action_v1`
 are intended to stay the same so that custom rules can reuse them.
 
-### Debugging amibguous structures
+### Debugging ambiguous structures
 
 (May need more docs and some test cases.)
 
@@ -333,7 +333,7 @@ print(rules.lookup(typ=MyAmbiguousClass, verb='show_pattern'))
 
 _The RuleSet caches encoders._ Construct a new ruleset if you want to change settings.
 
-_Encoders and decoders do very little checking._ Especially, if you're translating
+_Encoders and decoders do a very little checking._ Especially, if you're translating
 Python to JSON, it's assumed that your Python classes are correct. The encoders and
 decoders may mask subtle issues as they are calling constructors like `str` and `int`
 for you. And, by design, if you're translating from JSON to Python, it's assumed you
@@ -353,7 +353,7 @@ multiple inheritance, it's not clear which rule should apply
 _Checks are stricter than converters._ For example, a check for `int` will check whether
 the value is an integer, whereas the converter simply calls `int` on it. Thus there are
 inputs for where `MyType` would pass but `Union[MyType, Dummy]` will fail. (Note
-that `Optional` is special cased to look for `None` and doesn't have this problem.)
+that `Optional` is special-cased to look for `None` and doesn't have this problem.)
 
 _Numbers are hard._ See the rules named `floats`, `floats_nan_str`, `decimals`,
 `decimals_as_str` for details on how to get numbers to transmit reliably. There is no rule for
@@ -382,7 +382,7 @@ The environments for 3.4 through 3.9 are in `pyproject.toml`, so just run:
 ### Notes
 
 <b id="f1">1</b>: Writing the encoder is deceptively easy because the instances in
-Python have complete information. The standard `json` module provides a hook to let
+Python has complete information. The standard `json` module provides a hook to let
 you encode an object, and another hook to recognize `dict`s that have some special
 attribute. This can work quite well, but you'll have to encode *all* non-JSON types
 with dict-wrappers for the process to work in reverse. [↩](#a1)
