@@ -155,7 +155,7 @@ with open('myfile.json', 'w') as fh:
 ### Using generic types
 
 Generally, the [typing][] module simply provides capital letter type names that explicitly
-corresponds to the internal types. [See TYPES for a more thorough introduction][types].
+correspond to the internal types. [See TYPES for a more thorough introduction][types].
 
 And you specify the type of the contents as a parameter in square brackets.
 
