@@ -333,7 +333,7 @@ print(rules.lookup(typ=MyAmbiguousClass, verb='show_pattern'))
 
 _The RuleSet caches encoders._ Construct a new ruleset if you want to change settings.
 
-_Encoders and decoders do a very little checking._ Especially, if you're translating
+_Encoders and decoders do very little checking._ Especially, if you're translating
 Python to JSON, it's assumed that your Python classes are correct. The encoders and
 decoders may mask subtle issues as they are calling constructors like `str` and `int`
 for you. And, by design, if you're translating from JSON to Python, it's assumed you
