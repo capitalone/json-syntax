@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/UnitedIncome/json-syntax/tree/master.svg?style=svg)](https://circleci.com/gh/UnitedIncome/json-syntax/tree/master)
+# United Income at Capital One created this project with the intention of it helping us with JSON parsing. This project has not gained wide adoption. As such, we have stopped providing updates to this project and archived it as of June 28th, 2021.
 
 # json-syntax
 
